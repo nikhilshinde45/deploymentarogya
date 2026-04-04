@@ -165,7 +165,6 @@ const AdminDashboard = () => {
     try {
       const formData = new FormData();
       formData.append('name', form.name.trim());
-      formData.append('email', form.email.trim());
       formData.append('specialization', form.specialization.trim());
       formData.append('experience', Number(form.experience));
       formData.append('bio', form.bio.trim());
@@ -175,12 +174,13 @@ const AdminDashboard = () => {
       }
 
       if (editingId) {
-        if (form.password) formData.append('password', form.password);
+        // Don't send email or password during update
         await axios.put(`/api/admin/doctors/${editingId}`, formData, {
           headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
         });
         pushToast('Doctor updated successfully', 'success');
       } else {
+        formData.append('email', form.email.trim());
         formData.append('password', form.password);
         await axios.post('/api/admin/doctors', formData, {
           headers: { ...authHeaders, 'Content-Type': 'multipart/form-data' },
@@ -437,41 +437,51 @@ const AdminDashboard = () => {
               </div>
 
               {/* email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input
-                  required
-                  type="email"
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder="doctor@example.com"
-                />
-              </div>
-
-              {/* password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {editingId ? 'New Password (leave blank to keep current)' : 'Password *'}
-                </label>
-                <div className="relative">
-                  <input
-                    required={!editingId}
-                    type={showPassword ? 'text' : 'password'}
-                    className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder={editingId ? '••••••••' : 'Min 6 characters'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+              {editingId ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <p className="w-full px-3 py-2 text-sm border border-gray-100 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed">
+                    {form.email}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    required
+                    type="email"
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    placeholder="doctor@example.com"
+                  />
+                </div>
+              )}
+
+              {/* password - only shown when creating */}
+              {!editingId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <div className="relative">
+                    <input
+                      required
+                      type={showPassword ? 'text' : 'password'}
+                      className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="Min 6 characters"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* specialization + experience */}
               <div className="grid grid-cols-2 gap-3">

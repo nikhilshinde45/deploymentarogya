@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Admin = require('../models/Admin');
+const DoctorProfile = require('../models/DoctorProfile');
 
 const protect = async (req, res, next) => {
     let token;
@@ -15,8 +17,16 @@ const protect = async (req, res, next) => {
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Get user from the token. We exclude the password for security.
-            const currentUser = await User.findById(decoded.id).select('-password');
+            let currentUser;
+            
+            // Get user from the correct collection based on role
+            if (decoded.role === 'admin') {
+                currentUser = await Admin.findById(decoded.id).select('-password');
+            } else if (decoded.role === 'doctor') {
+                currentUser = await DoctorProfile.findById(decoded.id).select('-password');
+            } else {
+                currentUser = await User.findById(decoded.id).select('-password');
+            }
 
             if (!currentUser) {
                 return res.status(401).json({ message: 'Not authorized, user no longer exists' });
@@ -36,6 +46,14 @@ const protect = async (req, res, next) => {
 };
 
 // Role-based access middleware helpers
+
+const adminOnly = async (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Forbidden: Requires admin access' });
+    }
+};
 
 const patientOnly = async (req, res, next) => {
     if (req.user && req.user.role === 'patient') {
@@ -74,6 +92,7 @@ const patientDoctorOrPharmacist = async (req, res, next) => {
 
 module.exports = {
     protect,
+    adminOnly,
     patientOnly,
     doctorOnly,
     pharmacistOnly,

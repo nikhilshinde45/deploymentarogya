@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
+
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       dbName: 'aarogyaai' // force correct DB
@@ -14,6 +15,7 @@ const connectDB = async () => {
     console.error('DB connection error:', error.message);
     process.exit(1);
   }
+
 };
 
 module.exports = connectDB;

@@ -7,21 +7,31 @@ const Home = () => {
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    
+
     const [searchName, setSearchName] = useState('');
     const [specialization, setSpecialization] = useState('');
 
     // Predefined specializations for dropdown
     const specializations = [
-        "",
+        "General Physician",
         "Cardiologist",
         "Dentist",
         "Dermatologist",
-        "General Physician",
         "Neurologist",
         "Orthopedic",
         "Pediatrician",
-        "Psychiatrist"
+        "Psychiatrist",
+        "Gynecologist",
+        "ENT Specialist",
+        "Ophthalmologist",
+        "Urologist",
+        "Oncologist",
+        "Radiologist",
+        "Pulmonologist",
+        "Endocrinologist",
+        "Gastroenterologist",
+        "Nephrologist",
+        "Other"
     ];
 
     const fetchDoctors = useCallback(async () => {
@@ -68,15 +78,15 @@ const Home = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
                     </div>
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         value={searchName}
                         onChange={(e) => setSearchName(e.target.value)}
-                        className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 transition-all sm:text-sm" 
-                        placeholder="Search doctors by name..." 
+                        className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white focus:border-blue-500 transition-all sm:text-sm"
+                        placeholder="Search doctors by name..."
                     />
                 </div>
-                
+
                 <div className="relative w-full sm:w-64 pl-2">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Filter className="h-5 w-5 text-gray-400" />
@@ -116,7 +126,7 @@ const Home = () => {
                         <h3 className="text-xl font-bold text-gray-800">No doctors match your criteria</h3>
                         <p className="text-gray-500 mt-2">Try adjusting your search filters or specialization</p>
                         {(searchName || specialization) && (
-                            <button 
+                            <button
                                 onClick={() => { setSearchName(''); setSpecialization(''); }}
                                 className="mt-6 px-6 py-2 bg-blue-50 text-blue-600 font-medium rounded-full hover:bg-blue-100 transition-colors inline-block"
                             >

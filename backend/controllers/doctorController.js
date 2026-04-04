@@ -1,35 +1,37 @@
 const DoctorProfile = require('../models/DoctorProfile');
-const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 
-// @desc    Create Doctor Profile
-// @route   POST /api/doctors/profile
-// @access  Private/Doctor
-const createDoctorProfile = async (req, res) => {
+// Generate JWT
+const generateToken = (id, role) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+};
+
+// @desc    Authenticate doctor
+// @route   POST /api/doctor/login
+// @access  Public
+const loginDoctor = async (req, res) => {
     try {
-        const { specialization, experience, bio } = req.body;
+        const { email, password } = req.body;
 
-        if (!specialization || experience === undefined) {
-            return res.status(400).json({ success: false, message: 'Specialization and experience are required' });
+        const doctor = await DoctorProfile.findOne({ email });
+
+        if (doctor && (await doctor.matchPassword(password))) {
+            res.json({
+                _id: doctor.id,
+                doctorId: doctor.doctorId,
+                name: doctor.name,
+                email: doctor.email,
+                role: doctor.role,
+                token: generateToken(doctor._id, doctor.role)
+            });
+        } else {
+            res.status(401).json({ message: 'Invalid email or password' });
         }
-
-        // Prevent duplicate profiles
-        let profile = await DoctorProfile.findOne({ user: req.user._id });
-        if (profile) {
-            return res.status(400).json({ success: false, message: 'Profile already exists for this doctor' });
-        }
-
-        profile = await DoctorProfile.create({
-            user: req.user._id,
-            doctorId: req.user.uniqueId,
-            specialization,
-            experience,
-            bio
-        });
-
-        res.status(201).json({ success: true, data: profile });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error' });
+        res.status(500).json({ message: 'Server Error' });
     }
 };
 
@@ -47,13 +49,7 @@ const getDoctors = async (req, res) => {
         }
 
         if (name) {
-            const users = await User.find({
-                name: { $regex: name, $options: 'i' },
-                role: 'doctor'
-            }).select('_id');
-            
-            const userIds = users.map(u => u._id);
-            profileQuery.user = { $in: userIds };
+            profileQuery.name = { $regex: name, $options: 'i' };
         }
 
         const pageNum = parseInt(page, 10);
@@ -63,7 +59,7 @@ const getDoctors = async (req, res) => {
         const total = await DoctorProfile.countDocuments(profileQuery);
 
         const doctors = await DoctorProfile.find(profileQuery)
-            .populate('user', 'name email uniqueId role')
+            .select('-password')
             .skip(startIndex)
             .limit(limitNum)
             .sort({ createdAt: -1 });
@@ -91,8 +87,7 @@ const getDoctorById = async (req, res) => {
     try {
         const { doctorId } = req.params;
 
-        const doctor = await DoctorProfile.findOne({ doctorId })
-            .populate('user', 'name email uniqueId role');
+        const doctor = await DoctorProfile.findOne({ doctorId }).select('-password');
 
         if (!doctor) {
             return res.status(404).json({ success: false, message: 'Doctor not found' });
@@ -106,7 +101,7 @@ const getDoctorById = async (req, res) => {
 };
 
 module.exports = {
-    createDoctorProfile,
+    loginDoctor,
     getDoctors,
     getDoctorById
 };

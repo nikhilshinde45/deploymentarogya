@@ -34,8 +34,8 @@ const createRecord = async (req, res) => {
 
     const savedRecord = await newRecord.save();
     const populated = await MedicalRecord.findById(savedRecord._id)
-      .populate('doctorId', 'name email uniqueId')
-      .populate('patientId', 'name email uniqueId');
+      .populate('doctorId', 'name email doctorId profileImage')
+      .populate('patientId', 'name email uniqueId role');
 
     res.status(201).json({ success: true, message: 'Medical record created', data: populated });
   } catch (error) {
@@ -56,8 +56,8 @@ const getPatientRecords = async (req, res) => {
     }
 
     const records = await MedicalRecord.find({ patientId })
-      .populate('doctorId', 'name email uniqueId')
-      .populate('patientId', 'name email uniqueId')
+      .populate('doctorId', 'name email doctorId profileImage')
+      .populate('patientId', 'name email uniqueId role')
       .sort({ date: -1 });
 
     res.status(200).json({ success: true, count: records.length, data: records });
@@ -73,7 +73,7 @@ const getPatientRecords = async (req, res) => {
 const getMyRecords = async (req, res) => {
   try {
     const records = await MedicalRecord.find({ patientId: req.user.id })
-      .populate('doctorId', 'name email uniqueId')
+      .populate('doctorId', 'name email doctorId profileImage')
       .sort({ date: -1 });
 
     res.status(200).json({ success: true, count: records.length, data: records });

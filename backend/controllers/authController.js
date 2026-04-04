@@ -1,55 +1,37 @@
 const User = require('../models/User');
+const DoctorProfile = require('../models/DoctorProfile');
+const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id, role) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
 };
 
-// @desc    Register a new user
+// @desc    Register a new patient
 // @route   POST /api/auth/register
 // @access  Public
-const fs = require('fs');
-
-const logDebug = (message) => {
-    const line = `${new Date().toISOString()} ${message}\n`;
-    fs.appendFileSync('register-debug.log', line);
-};
-
 const registerUser = async (req, res) => {
     try {
-        console.log("REGISTER HIT");
-        logDebug('registerUser called: ' + JSON.stringify(req.body));
-        let { name, email, password, role } = req.body;
+        const { name, email, password, role } = req.body;
 
         if (!name || !email || !password || !role) {
-            logDebug('registerUser missing fields');
             return res.status(400).json({ message: 'Please provide all required fields' });
         }
 
-        name = name.trim();
-        email = email.trim().toLowerCase();
-
-        logDebug('registerUser normalized: ' + JSON.stringify({ name, email, role }));
-
-        if (!name || !email || !password || !role) {
-            logDebug('registerUser missing fields after normalization');
-            return res.status(400).json({ message: 'Please provide all required fields' });
+        if (role !== 'patient') {
+            return res.status(400).json({ message: 'Only patients can register here' });
         }
 
-        if (!['patient', 'doctor', 'pharmacist'].includes(role)) {
-            logDebug('registerUser invalid role: ' + role);
-            return res.status(400).json({ message: 'Invalid role provided' });
-        }
-
-        // Check if user already exists
+        // Check if email exists across all collections
         const userExists = await User.findOne({ email });
-        logDebug('registerUser userExists: ' + !!userExists);
+        const doctorExists = await DoctorProfile.findOne({ email });
+        const adminExists = await Admin.findOne({ email });
 
-        if (userExists) {
-            return res.status(409).json({ message: 'User already exists' });
+        if (userExists || doctorExists || adminExists) {
+            return res.status(400).json({ message: 'Email already exists' });
         }
 
         // Create user (password hash and uniqueId generation is handled by User.js pre-save hook)
@@ -59,8 +41,6 @@ const registerUser = async (req, res) => {
             password,
             role
         });
-        logDebug('registerUser user created with id: ' + (user ? user._id : 'none'));
-      
 
         if (user) {
             res.status(201).json({
@@ -69,22 +49,18 @@ const registerUser = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 uniqueId: user.uniqueId,
-                token: generateToken(user._id)
+                token: generateToken(user._id, user.role)
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
         }
     } catch (error) {
-        console.error('registerUser error:', error.message);
-        console.error(error.stack);
-        if (error.code === 11000) {
-            return res.status(409).json({ message: 'Email already registered' });
-        }
+        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
 
-// @desc    Authenticate a user
+// @desc    Authenticate a patient
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
@@ -95,13 +71,16 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
+            if (user.role !== 'patient' && user.role !== 'pharmacist') {
+                 return res.status(403).json({ message: 'Access denied' });
+            }
             res.json({
                 _id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
                 uniqueId: user.uniqueId,
-                token: generateToken(user._id)
+                token: generateToken(user._id, user.role)
             });
         } else {
             res.status(401).json({ message: 'Invalid email or password' });

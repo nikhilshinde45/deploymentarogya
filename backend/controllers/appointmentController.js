@@ -19,8 +19,7 @@ const resolveDoctorProfile = async (doctorIdentifier) => {
 
 const buildDoctorPopulate = () => ({
     path: 'doctor',
-    select: 'doctorId specialization user',
-    populate: { path: 'user', select: 'name email uniqueId role' }
+    select: 'doctorId specialization name email profileImage'
 });
 
 const buildPatientPopulate = () => ({
@@ -35,7 +34,7 @@ const toISODateString = () => new Date().toISOString().slice(0, 10);
 // @access  Private/Doctor
 const createSlots = async (req, res) => {
     try {
-        const doctorProfile = await DoctorProfile.findOne({ user: req.user.id });
+        const doctorProfile = req.user;
         if (!doctorProfile) {
             return res.status(404).json({
                 success: false,
@@ -208,7 +207,7 @@ const cancelAppointment = async (req, res) => {
         }
 
         const isPatientOwner = appointment.patient.toString() === req.user.id;
-        const isDoctorOwner = req.user.role === 'doctor' && (await DoctorProfile.findOne({ user: req.user.id, _id: appointment.doctor }));
+        const isDoctorOwner = req.user.role === 'doctor' && req.user.id === appointment.doctor.toString();
 
         if (!isPatientOwner && !isDoctorOwner) {
             return res.status(403).json({ success: false, message: 'Forbidden: Not your appointment' });
@@ -244,7 +243,7 @@ const getUpcomingAppointments = async (req, res) => {
         if (req.user.role === 'patient') {
             query.patient = req.user.id;
         } else if (req.user.role === 'doctor') {
-            const doctorProfile = await DoctorProfile.findOne({ user: req.user.id });
+            const doctorProfile = req.user;
             if (!doctorProfile) {
                 return res.status(404).json({ success: false, message: 'Doctor profile not found' });
             }
@@ -310,7 +309,7 @@ const getDoctorAppointments = async (req, res) => {
     try {
         const today = toISODateString();
 
-        const doctorProfile = await DoctorProfile.findOne({ user: req.user.id });
+        const doctorProfile = req.user;
         if (!doctorProfile) {
             return res.status(404).json({ success: false, message: 'Doctor profile not found' });
         }

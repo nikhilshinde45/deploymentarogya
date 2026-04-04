@@ -11,23 +11,45 @@ const generateToken = (id) => {
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
+const fs = require('fs');
+
+const logDebug = (message) => {
+    const line = `${new Date().toISOString()} ${message}\n`;
+    fs.appendFileSync('register-debug.log', line);
+};
+
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        console.log("REGISTER HIT");
+        logDebug('registerUser called: ' + JSON.stringify(req.body));
+        let { name, email, password, role } = req.body;
 
         if (!name || !email || !password || !role) {
+            logDebug('registerUser missing fields');
+            return res.status(400).json({ message: 'Please provide all required fields' });
+        }
+
+        name = name.trim();
+        email = email.trim().toLowerCase();
+
+        logDebug('registerUser normalized: ' + JSON.stringify({ name, email, role }));
+
+        if (!name || !email || !password || !role) {
+            logDebug('registerUser missing fields after normalization');
             return res.status(400).json({ message: 'Please provide all required fields' });
         }
 
         if (!['patient', 'doctor', 'pharmacist'].includes(role)) {
+            logDebug('registerUser invalid role: ' + role);
             return res.status(400).json({ message: 'Invalid role provided' });
         }
 
         // Check if user already exists
         const userExists = await User.findOne({ email });
+        logDebug('registerUser userExists: ' + !!userExists);
 
         if (userExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(409).json({ message: 'User already exists' });
         }
 
         // Create user (password hash and uniqueId generation is handled by User.js pre-save hook)
@@ -37,6 +59,8 @@ const registerUser = async (req, res) => {
             password,
             role
         });
+        logDebug('registerUser user created with id: ' + (user ? user._id : 'none'));
+      
 
         if (user) {
             res.status(201).json({
@@ -51,7 +75,11 @@ const registerUser = async (req, res) => {
             res.status(400).json({ message: 'Invalid user data' });
         }
     } catch (error) {
-        console.error(error);
+        console.error('registerUser error:', error.message);
+        console.error(error.stack);
+        if (error.code === 11000) {
+            return res.status(409).json({ message: 'Email already registered' });
+        }
         res.status(500).json({ message: 'Server Error' });
     }
 };

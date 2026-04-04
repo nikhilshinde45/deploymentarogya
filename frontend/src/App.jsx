@@ -8,6 +8,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import Medicines from './pages/Medicines';
 import PharmacistDashboard from './pages/PharmacistDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import PatientHealthAssistantPlaceholder from './components/PatientHealthAssistantPlaceholder';
 import { useMemo } from 'react';
 import { LogOut } from 'lucide-react';
@@ -31,6 +32,7 @@ const AppContent = () => {
   const navItems = useMemo(() => {
     if (role === 'patient') return [{ label: 'Patient Dashboard', to: '/patient-dashboard' }];
     if (role === 'doctor') return [{ label: 'Doctor Dashboard', to: '/doctor-dashboard' }];
+    if (role === 'admin') return [{ label: 'Admin Dashboard', to: '/admin-dashboard' }];
     if (role === 'pharmacist') return [{ label: 'Pharmacist Dashboard', to: '/pharmacist-dashboard' }];
     return [];
   }, [role]);
@@ -91,6 +93,7 @@ const AppContent = () => {
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
           </Routes>
         </main>
 

@@ -33,6 +33,12 @@ const DashboardLayout = ({ active, children }) => {
             icon: Stethoscope
         },
         {
+            key: 'admin',
+            label: 'Admin Dashboard',
+            to: '/admin-dashboard',
+            icon: UserCog
+        },
+        {
             key: 'pharmacist',
             label: 'Pharmacist Dashboard',
             to: '/pharmacist-dashboard',

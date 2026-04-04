@@ -477,13 +477,33 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Specialization *</label>
-                  <input
+                  <select
                     required
                     className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
                     value={form.specialization}
                     onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-                    placeholder="Cardiology"
-                  />
+                  >
+                    <option value="">Select Specialization</option>
+                    <option>General Physician</option>
+                    <option>Cardiologist</option>
+                    <option>Dentist</option>
+                    <option>Dermatologist</option>
+                    <option>Neurologist</option>
+                    <option>Orthopedic</option>
+                    <option>Pediatrician</option>
+                    <option>Psychiatrist</option>
+                    <option>Gynecologist</option>
+                    <option>ENT Specialist</option>
+                    <option>Ophthalmologist</option>
+                    <option>Urologist</option>
+                    <option>Oncologist</option>
+                    <option>Radiologist</option>
+                    <option>Pulmonologist</option>
+                    <option>Endocrinologist</option>
+                    <option>Gastroenterologist</option>
+                    <option>Nephrologist</option>
+                    <option>Other</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Experience (yrs) *</label>

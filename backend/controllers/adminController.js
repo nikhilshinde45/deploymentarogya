@@ -100,6 +100,14 @@ const updateDoctor = async (req, res) => {
         const { id } = req.params;
         const updates = { ...req.body };
 
+        // Never allow admin to update email or password
+        // - Email is the doctor's login identity and must not change
+        // - Password cannot be updated via findByIdAndUpdate because the
+        //   pre('save') hook that hashes passwords does NOT run on update queries,
+        //   which would store it in plain text and break login (401 error)
+        delete updates.email;
+        delete updates.password;
+
         // If a new image was uploaded, use it
         if (req.file) {
             updates.profileImage = req.file.path;
@@ -108,16 +116,6 @@ const updateDoctor = async (req, res) => {
         // Remove profileImage from body if sent as string (shouldn't happen but safety)
         if (typeof updates.profileImage === 'string' && !req.file) {
             delete updates.profileImage;
-        }
-
-        // Prevent admin from overriding these directly via simple update if not intended
-        if (updates.email) {
-             const emailExistsUser = await User.findOne({ email: updates.email });
-             const emailExistsDoctor = await DoctorProfile.findOne({ email: updates.email, _id: { $ne: id } });
-             const emailExistsAdmin = await Admin.findOne({ email: updates.email });
-             if (emailExistsUser || emailExistsDoctor || emailExistsAdmin) {
-                 return res.status(400).json({ success: false, message: 'Email already exists' });
-             }
         }
 
         const doctor = await DoctorProfile.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select('-password');

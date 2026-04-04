@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["patient", "doctor", "pharmacist"],
+      enum: ["patient", "pharmacist"],
       required: true,
     },
 
@@ -46,9 +46,6 @@ userSchema.pre("save", async function () {
     if (this.role === "patient") {
       prefix = "PAT";
       counterId = "patientId";
-    } else if (this.role === "doctor") {
-      prefix = "DOC";
-      counterId = "doctorId";
     } else if (this.role === "pharmacist") {
       prefix = "PHA";
       counterId = "pharmacistId";

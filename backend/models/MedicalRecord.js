@@ -10,7 +10,7 @@ const medicalRecordSchema = new mongoose.Schema(
     },
     doctorId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'DoctorProfile',
       required: true,
       index: true,
     },

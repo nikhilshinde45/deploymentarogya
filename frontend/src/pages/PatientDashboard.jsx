@@ -127,7 +127,7 @@ const PatientDashboard = () => {
                                         className="border border-gray-100 rounded-xl p-4 bg-gray-50/40"
                                     >
                                         <p className="font-semibold text-gray-900">
-                                            {appt.doctor?.user?.name ? `Dr. ${appt.doctor.user.name}` : 'Doctor'}
+                                            {appt.doctor?.name ? `Dr. ${appt.doctor.name}` : 'Doctor'}
                                         </p>
                                         <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-700">
                                             <span className="inline-flex items-center gap-2">
@@ -178,7 +178,7 @@ const PatientDashboard = () => {
                                         {pastAppointments.map((appt) => (
                                             <tr key={appt._id} className="border-t border-gray-100">
                                                 <td className="py-3 pr-2 font-medium text-gray-900">
-                                                    {appt.doctor?.user?.name ? `Dr. ${appt.doctor.user.name}` : 'Doctor'}
+                                                    {appt.doctor?.name ? `Dr. ${appt.doctor.name}` : 'Doctor'}
                                                 </td>
                                                 <td className="py-3 pr-2 text-gray-700">{formatDate(appt.date)}</td>
                                                 <td className="py-3 pr-2 text-gray-700">{appt.time}</td>

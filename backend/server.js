@@ -5,11 +5,15 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const doctorAuthRoutes = require('./routes/doctorAuthRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const recordsRoutes = require('./routes/recordsRoutes');
+// console.log("🚀 Server started file running");
+// console.log("👉 adminRoutes:", adminRoutes);
 
 const app = express();
 
@@ -27,6 +31,8 @@ connectDB();
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/doctor', doctorAuthRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
@@ -42,4 +48,4 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));

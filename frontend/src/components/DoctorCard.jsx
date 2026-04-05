@@ -13,11 +13,15 @@ const DoctorCard = ({ doctor }) => {
             <div className="p-6">
                 <div className="flex items-start gap-4">
                     <div className="h-16 w-16 min-w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl uppercase ring-4 ring-blue-50 group-hover:ring-blue-100 transition-all duration-300">
-                        {doctor?.name?.charAt(0) || 'D'}
+                        {doctor?.profileImage ? (
+                            <img src={doctor.profileImage} alt={doctor.name} className="h-full w-full rounded-full object-cover" />
+                        ) : (
+                            doctor?.name?.charAt(0) || 'D'
+                        )}
                     </div>
                     <div className="flex-1">
                         <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-                            Dr. {doctor?.name || 'Unknown'}
+                            {doctor?.name ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown'}
                         </h3>
                         
                         <div className="mt-2 space-y-2">

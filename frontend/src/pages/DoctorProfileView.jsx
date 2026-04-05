@@ -141,15 +141,21 @@ const DoctorProfileView = () => {
                 <div className="px-6 pb-8 sm:px-10 relative">
                     {/* Avatar */}
                     <div className="h-28 w-28 bg-white rounded-full flex items-center justify-center p-2 absolute -top-14 shadow-md border border-gray-100">
-                        <div className="w-full h-full bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-4xl font-extrabold uppercase">
-                            {doctor?.name?.charAt(0) || 'D'}
-                        </div>
+                        {doctor?.profileImage ? (
+                            <img src={doctor.profileImage} alt={doctor.name} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-4xl font-extrabold uppercase">
+                                {doctor?.name?.charAt(0) || 'D'}
+                            </div>
+                        )}
                     </div>
                     
                     <div className="pt-16 sm:flex sm:items-start sm:justify-between">
                         <div>
                             <div className="flex items-center flex-wrap gap-2">
-                                <h1 className="text-3xl font-extrabold text-gray-900 leading-none">Dr. {doctor?.name}</h1>
+                                <h1 className="text-3xl font-extrabold text-gray-900 leading-none">
+                                    {doctor?.name ? (doctor.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`) : 'Unknown'}
+                                </h1>
                                 <ShieldCheck className="w-6 h-6 text-emerald-500" title="Verified Profile" />
                             </div>
                             <p className="text-gray-400 font-bold text-sm mt-2 tracking-wider uppercase">

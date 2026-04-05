@@ -1,7 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Search, Filter, Loader2, RefreshCcw } from 'lucide-react';
+import { Search, Filter, Loader2, RefreshCcw, ChevronDown, Star, Activity, Phone, ArrowRight, CheckCircle2, Award, Mail } from 'lucide-react';
 import DoctorCard from '../components/DoctorCard';
+
+const faqs = [
+    { question: "How do I book an online consultation?", answer: "Simply search for a doctor using our specialized filters, check their available slots, and click 'Book Appointment'. You'll get an immediate confirmation." },
+    { question: "Are my medical records safe?", answer: "Yes, we use military-grade encryption to ensure that all your medical history, prescriptions, and video consultation notes remain strictly confidential and secure." },
+    { question: "What if I miss my appointment?", answer: "If you miss your scheduled video call, the status will automatically update to 'Not Attended'. You can comfortably rebook a new slot from your patient dashboard." },
+    { question: "How does the video consultation work?", answer: "At the time of your appointment, a 'Join Call' button will become active in your dashboard. Clicking it will seamlessly launch a secure peer-to-peer video room with your doctor." },
+    { question: "Can I access my prescription online?", answer: "Absolutely! Once your consultation concludes, your doctor can upload a digital prescription directly to your Patient Dashboard under the view medical records section." }
+];
+
+const testimonials = [
+    { name: "Avinash Kumar", text: "Very good web platform. Well thought out about booking/rescheduling an appointment. Doctor's feedback mechanism is good and describes all the basics in a clear way.", rating: 5, initial: "A" },
+    { name: "Priya Sharma", text: "Absolutely loved the clean interface. The video call was crystal clear and I could access my prescription immediately after the consultation ended.", rating: 5, initial: "P" },
+    { name: "Dr. Sandeep Patel", text: "As a practitioner, the slot management and medical record timeline features are a lifesaver. Extremely intuitive UI.", rating: 5, initial: "S" }
+];
 
 const Home = () => {
     const [doctors, setDoctors] = useState([]);
@@ -10,6 +24,21 @@ const Home = () => {
 
     const [searchName, setSearchName] = useState('');
     const [specialization, setSpecialization] = useState('');
+
+    const titles = ["Specialist", "Doctor", "Caregiver", "Consultant"];
+    const [titleIndex, setTitleIndex] = useState(0);
+
+    const [openFaq, setOpenFaq] = useState(0);
+    const [testimonialIdx, setTestimonialIdx] = useState(0);
+
+    const toggleFaq = (index) => setOpenFaq(openFaq === index ? null : index);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTitleIndex((prev) => (prev + 1) % titles.length);
+        }, 2200); 
+        return () => clearInterval(interval);
+    }, []);
 
     // Predefined specializations for dropdown
     const specializations = [
@@ -62,18 +91,45 @@ const Home = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header section */}
-            <div className="text-center max-w-2xl mx-auto space-y-4">
-                <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight">
-                    Find Your <span className="text-blue-600">Specialist</span>
-                </h1>
-                <p className="text-lg text-gray-500">
-                    Search and book appointments with the best verified doctors near you.
-                </p>
-            </div>
+            
+            {/* Hero Profile Banner w/ Background */}
+            <div className="relative rounded-3xl overflow-hidden bg-white shadow-sm border border-gray-100 py-16 px-4 md:py-20 mb-10 w-full flex flex-col items-center justify-center min-h-[420px]">
+                {/* Background Image & Overlay */}
+                <div 
+                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.05]"
+                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=2000')" }}
+                ></div>
+                <div className="absolute inset-0 z-0 bg-gradient-to-b from-blue-50/70 to-white/95"></div>
 
-            {/* Filter Section */}
-            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row gap-4 items-center max-w-4xl mx-auto">
+                {/* Header content strictly positioned over background */}
+                <div className="relative z-10 text-center max-w-4xl mx-auto space-y-7 w-full">
+                    <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight flex flex-col sm:flex-row items-center justify-center gap-x-3 gap-y-2">
+                        <span>Find Your</span>
+                        <span 
+                            key={titleIndex}
+                            className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 slide-fade-in inline-block drop-shadow-sm"
+                            style={{ minWidth: '220px', textAlign: 'left' }}
+                        >
+                            {titles[titleIndex]}
+                        </span>
+                    </h1>
+                    
+                    {/* Marquee Running Text Box */}
+                    <div className="overflow-hidden w-full max-w-lg mx-auto rounded-full bg-white/60 backdrop-blur-sm border border-blue-100 py-2.5 shadow-inner relative">
+                        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-white/80 to-transparent z-10"></div>
+                        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/80 to-transparent z-10"></div>
+                        <div className="whitespace-nowrap animate-marquee flex">
+                            <p className="text-blue-800 font-semibold tracking-wide pr-8">
+                                • Search and book appointments with the best verified doctors near you • 24/7 Availability • Secure Consultations • 
+                            </p>
+                            <p className="text-blue-800 font-semibold tracking-wide pr-8" aria-hidden="true">
+                                • Search and book appointments with the best verified doctors near you • 24/7 Availability • Secure Consultations • 
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Filter Section */}
+                    <div className="bg-white/95 backdrop-blur-md p-4 sm:p-5 rounded-2xl shadow-xl shadow-blue-900/5 ring-1 ring-black/5 flex flex-col sm:flex-row gap-4 items-center w-full max-w-4xl mx-auto mt-10 relative z-20 transition-all hover:shadow-2xl">
                 <div className="relative flex-1 w-full pl-2">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="h-5 w-5 text-gray-400" />
@@ -101,6 +157,8 @@ const Home = () => {
                             <option key={spec} value={spec}>{spec}</option>
                         ))}
                     </select>
+                </div>
+                    </div>
                 </div>
             </div>
 
@@ -142,6 +200,102 @@ const Home = () => {
                     </div>
                 )}
             </div>
+
+
+            {/* --- NEW SECTION: Testimonial Carousel --- */}
+            <div className="max-w-4xl mx-auto mt-24 mb-16 text-center px-4">
+                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">What our users have to say</h2>
+                <div className="w-16 h-1.5 bg-blue-600 mx-auto rounded-full mb-10"></div>
+                
+                <div className="relative bg-white border border-gray-100 p-8 sm:p-12 rounded-3xl shadow-sm">
+                    <div className="min-h-[160px] flex flex-col justify-center">
+                        <p className="text-lg sm:text-2xl font-semibold text-gray-700 leading-relaxed italic animate-in fade-in zoom-in-95 duration-300" key={`text-${testimonialIdx}`}>
+                            "{testimonials[testimonialIdx].text}"
+                        </p>
+                    </div>
+                    
+                    <div className="mt-8 flex flex-col items-center justify-center animate-in fade-in slide-in-from-bottom-4 duration-500" key={`user-${testimonialIdx}`}>
+                        <div className="flex items-center gap-1 mb-3">
+                            {[...Array(testimonials[testimonialIdx].rating)].map((_, i) => (
+                                <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                            ))}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 ring-2 ring-white shadow-sm">
+                                {testimonials[testimonialIdx].initial}
+                            </div>
+                            <span className="font-bold text-gray-900">{testimonials[testimonialIdx].name}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Carousel Dots */}
+                <div className="flex justify-center gap-2 mt-6">
+                    {testimonials.map((_, idx) => (
+                        <button 
+                            key={idx}
+                            onClick={() => setTestimonialIdx(idx)}
+                            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${testimonialIdx === idx ? 'bg-blue-600 w-6' : 'bg-slate-300 hover:bg-slate-400'}`}
+                            aria-label={`Go to slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* --- NEW SECTION: FAQs --- */}
+            <div className="max-w-3xl mx-auto mt-24 mb-24 px-4">
+                <div className="text-center mb-10">
+                    <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Frequently Asked Questions</h2>
+                    <p className="text-gray-500">Everything you need to know about the platform.</p>
+                </div>
+                
+                <div className="space-y-3">
+                    {faqs.map((faq, idx) => {
+                        const isOpen = openFaq === idx;
+                        return (
+                            <div 
+                                key={idx} 
+                                className={`border rounded-2xl overflow-hidden transition-all duration-300 group ${isOpen ? 'bg-white border-blue-300 shadow-lg ring-2 ring-blue-100' : 'bg-slate-50 border-gray-200 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'}`}
+                            >
+                                <button 
+                                    onClick={() => toggleFaq(idx)}
+                                    className="w-full px-6 py-5 text-left flex justify-between items-center focus:outline-none rounded-2xl"
+                                >
+                                    <span className={`font-semibold text-lg transition-colors duration-200 ${isOpen ? 'text-blue-700' : 'text-gray-800 group-hover:text-blue-800'}`}>
+                                        {faq.question}
+                                    </span>
+                                    <ChevronDown className={`w-5 h-5 transition-all duration-300 shrink-0 ${isOpen ? 'rotate-180 text-blue-600' : 'text-gray-400 group-hover:text-blue-600'}`} />
+                                </button>
+                                <div 
+                                    className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                                >
+                                    <p className="text-gray-600 leading-relaxed text-sm md:text-base pr-8">
+                                        {faq.answer}
+                                    </p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <style>{`
+                @keyframes slideFadeIn {
+                    0% { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    100% { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .slide-fade-in {
+                    animation: slideFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    animation: marquee 20s linear infinite;
+                    width: max-content;
+                }
+            `}</style>
         </div>
     );
 };

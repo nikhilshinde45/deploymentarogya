@@ -322,14 +322,14 @@ const AdminDashboard = () => {
         {/* ── doctor table ───────────────────── */}
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
+            <table className="min-w-full text-left">
               <thead>
-                <tr className="bg-slate-50 border-b border-gray-100">
-                  <th className="px-5 py-3 font-semibold text-gray-700">Doctor</th>
-                  <th className="px-5 py-3 font-semibold text-gray-700">ID</th>
-                  <th className="px-5 py-3 font-semibold text-gray-700">Specialization</th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 text-center">Exp (yrs)</th>
-                  <th className="px-5 py-3 font-semibold text-gray-700 text-right">Actions</th>
+                <tr className="bg-slate-50 border-b border-gray-100 uppercase tracking-wider text-xs">
+                  <th className="px-6 py-4 font-bold text-gray-600">Doctor Profile</th>
+                  <th className="px-6 py-4 font-bold text-gray-600">ID</th>
+                  <th className="px-6 py-4 font-bold text-gray-600">Specialization</th>
+                  <th className="px-6 py-4 font-bold text-gray-600 text-center">Exp (yrs)</th>
+                  <th className="px-6 py-4 font-bold text-gray-600 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -347,49 +347,49 @@ const AdminDashboard = () => {
                       key={doc._id}
                       className={`${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/60'} hover:bg-blue-50/50 transition-colors`}
                     >
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
                           {doc.profileImage ? (
                             <img
                               src={doc.profileImage}
                               alt={doc.name}
-                              className="w-9 h-9 rounded-full object-cover ring-2 ring-white shadow-sm"
+                              className="w-12 h-12 rounded-full object-cover ring-4 ring-white shadow-sm"
                             />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-base font-bold shadow-sm ring-4 ring-white">
                               {doc.name?.[0]?.toUpperCase() || 'D'}
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{doc.name}</p>
-                            <p className="text-xs text-gray-500">{doc.email}</p>
+                            <p className="font-bold text-base text-gray-900">{doc.name}</p>
+                            <p className="text-sm text-gray-500">{doc.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center rounded-full bg-blue-50/80 px-3 py-1 text-sm font-bold text-blue-700 border border-blue-100/50 shadow-sm">
                           {doc.doctorId || '—'}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-gray-700">{doc.specialization}</td>
-                      <td className="px-5 py-3.5 text-center tabular-nums text-gray-800">{doc.experience}</td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="inline-flex items-center gap-1">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-700">{doc.specialization}</td>
+                      <td className="px-6 py-4 text-center tabular-nums text-sm font-medium text-gray-800">{doc.experience}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => openEdit(doc)}
-                            className="p-2 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            className="p-2.5 rounded-xl text-gray-500 hover:bg-blue-50 hover:text-blue-700 transition-all hover:shadow-sm"
                             title="Edit"
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Pencil className="w-4.5 h-4.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setDeleteConfirm(doc)}
-                            className="p-2 rounded-lg text-gray-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            className="p-2.5 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-700 transition-all hover:shadow-sm"
                             title="Delete"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Trash2 className="w-4.5 h-4.5" />
                           </button>
                         </div>
                       </td>
@@ -404,15 +404,16 @@ const AdminDashboard = () => {
 
       {/* ── add/edit modal ──────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-sm">
           <div
-            className="bg-white rounded-2xl shadow-xl max-w-lg w-full border border-gray-100 p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-3xl shadow-2xl max-w-xl w-full border border-gray-100 p-8 space-y-6 max-h-[90vh] overflow-y-auto"
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">
-                {editingId ? 'Edit Doctor' : 'Add New Doctor'}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                {editingId ? <Pencil className="w-5 h-5 text-blue-600"/> : <Plus className="w-5 h-5 text-blue-600"/>}
+                {editingId ? 'Edit Doctor Profile' : 'Add New Doctor Profile'}
               </h2>
               <button
                 type="button"
@@ -423,35 +424,37 @@ const AdminDashboard = () => {
               </button>
             </div>
 
-            <form className="space-y-3" onSubmit={submitForm}>
+            <form className="space-y-5 mt-4" onSubmit={submitForm}>
               {/* name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Full Name <span className="text-blue-600">*</span></label>
                 <input
                   required
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-400"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="Dr. John Doe"
+                  placeholder="e.g. Dr. John Doe"
                 />
               </div>
 
               {/* email */}
               {editingId ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <p className="w-full px-3 py-2 text-sm border border-gray-100 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
+                  <p className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed">
                     {form.email}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+                  <p className="text-xs text-gray-400 mt-1.5 font-medium flex items-center gap-1">
+                    <Shield className="w-3 h-3" /> Email cannot be changed for existing profiles
+                  </p>
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Email Address <span className="text-blue-600">*</span></label>
                   <input
                     required
                     type="email"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                    className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-400"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="doctor@example.com"
@@ -462,38 +465,38 @@ const AdminDashboard = () => {
               {/* password - only shown when creating */}
               {!editingId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Secure Password <span className="text-blue-600">*</span></label>
                   <div className="relative">
                     <input
                       required
                       type={showPassword ? 'text' : 'password'}
-                      className="w-full px-3 py-2 pr-10 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                      className="w-full px-4 py-2.5 pr-12 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-400"
                       value={form.password}
                       onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      placeholder="Min 6 characters"
+                      placeholder="Minimum 6 characters"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
                 </div>
               )}
 
               {/* specialization + experience */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Specialization *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Specialization <span className="text-blue-600">*</span></label>
                   <select
                     required
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                    className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-gray-700 cursor-pointer"
                     value={form.specialization}
                     onChange={(e) => setForm({ ...form, specialization: e.target.value })}
                   >
-                    <option value="">Select Specialization</option>
+                    <option value="" disabled>Select Core Field</option>
                     <option>General Physician</option>
                     <option>Cardiologist</option>
                     <option>Dentist</option>
@@ -516,58 +519,64 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Experience (yrs) *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Experience (Years) <span className="text-blue-600">*</span></label>
                   <input
                     required
                     type="number"
                     min="0"
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
+                    className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder:text-gray-400"
                     value={form.experience}
                     onChange={(e) => setForm({ ...form, experience: e.target.value })}
-                    placeholder="5"
+                    placeholder="e.g. 5"
                   />
                 </div>
               </div>
 
               {/* bio */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 cursor-pointer">Short Biography</label>
                 <textarea
                   rows={3}
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all resize-none"
+                  className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none transition-all resize-none placeholder:text-gray-400"
                   value={form.bio}
                   onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  placeholder="Short description of the doctor…"
+                  placeholder="Professional background, achievements, and general description…"
                 />
               </div>
 
               {/* profile image upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Profile Image {!editingId && '*'}
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Profile Image {!editingId ? <span className="text-blue-600">*</span> : <span className="text-gray-400 font-normal ml-1">(Optional)</span>}
                 </label>
                 <label
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-blue-50/50 hover:border-blue-300 transition-all group"
+                  className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50/80 hover:bg-blue-50/50 hover:border-blue-400 transition-all group relative overflow-hidden"
                 >
                   {imagePreview ? (
-                    <div className="flex items-center gap-3">
+                    <div className="absolute inset-0 w-full h-full p-4 flex flex-col sm:flex-row items-center justify-center gap-4 bg-white/60 backdrop-blur-sm z-10 transition-colors mx-auto text-center sm:text-left">
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-md"
+                        className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-md bg-white shrink-0"
                       />
-                      <div className="text-left">
-                        <p className="text-sm font-medium text-gray-700">
-                          {imageFile ? imageFile.name : 'Current image'}
+                      <div>
+                        <p className="text-base font-bold text-gray-800">
+                          {imageFile ? imageFile.name : 'Current Image'}
                         </p>
-                        <p className="text-xs text-blue-600 group-hover:underline">Click to change</p>
+                        <p className="text-sm font-semibold text-blue-600 mt-0.5 group-hover:text-blue-700 underline decoration-blue-200 group-hover:decoration-blue-600 underline-offset-4 transition-all">
+                          Click to browse and change
+                        </p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center gap-1.5 text-gray-400 group-hover:text-blue-500 transition-colors">
-                      <Upload className="w-6 h-6" />
-                      <span className="text-sm font-medium">Click to upload image</span>
-                      <span className="text-xs">JPG, PNG, WebP — max 5 MB</span>
+                    <div className="flex flex-col items-center gap-2.5 text-gray-400 group-hover:text-blue-600 transition-colors">
+                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center border border-gray-100 group-hover:border-blue-200 group-hover:bg-blue-50 transition-colors">
+                          <Upload className="w-6 h-6 text-gray-400 group-hover:text-blue-600" />
+                      </div>
+                      <div className="text-center">
+                          <span className="block text-base font-semibold text-gray-700 group-hover:text-blue-700">Click to upload doctor profile image</span>
+                          <span className="block text-sm mt-0.5 opacity-80">JPG, PNG, or WebP (max 5 MB)</span>
+                      </div>
                     </div>
                   )}
                   <input
@@ -580,23 +589,34 @@ const AdminDashboard = () => {
               </div>
 
               {formError && (
-                <p className="text-sm text-red-600 font-medium bg-red-50 rounded-lg px-3 py-2">{formError}</p>
+                <p className="text-sm text-red-600 font-medium bg-red-50 border border-red-100 rounded-lg px-4 py-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 shrink-0" />
+                    {formError}
+                </p>
               )}
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex bg-gray-50 -mx-8 -mb-8 mt-6 px-8 py-5 border-t border-gray-100 justify-end gap-3 rounded-b-3xl">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+                  className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors focus:ring-4 focus:ring-gray-100"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg focus:ring-4 focus:ring-blue-200"
                 >
-                  {saving ? 'Saving…' : editingId ? 'Update Doctor' : 'Add Doctor'}
+                  {saving ? (
+                      <span className="flex items-center gap-2">
+                         <Loader2 className="w-4 h-4 animate-spin" /> Saving Data…
+                      </span>
+                  ) : editingId ? (
+                      'Update Profile'
+                  ) : (
+                      'Save Doctor Profile'
+                  )}
                 </button>
               </div>
             </form>

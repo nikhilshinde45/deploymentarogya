@@ -31,6 +31,7 @@ const statusBadge = (status) => {
         confirmed: { label: 'Upcoming', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
         completed: { label: 'Completed', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
         cancelled: { label: 'Cancelled', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+        missed: { label: 'Not Attended', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', dot: 'bg-orange-500' },
     };
     return map[status] || map.confirmed;
 };
@@ -206,12 +207,16 @@ const PatientDashboard = () => {
                                             className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-blue-50/30 hover:border-blue-100 transition-all duration-200"
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
-                                                    {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
-                                                </div>
+                                                {appt.doctor?.profileImage ? (
+                                                    <img src={appt.doctor.profileImage} alt={appt.doctor.name} className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-blue-50" />
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                                                        {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
                                                     <p className="font-semibold text-gray-900 truncate">
-                                                        {appt.doctor?.name ? `Dr. ${appt.doctor.name}` : 'Doctor'}
+                                                        {appt.doctor?.name ? (appt.doctor.name.startsWith('Dr.') ? appt.doctor.name : `Dr. ${appt.doctor.name}`) : 'Doctor'}
                                                     </p>
                                                     <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                                                         <span className="flex items-center gap-1">
@@ -269,7 +274,9 @@ const PatientDashboard = () => {
                         ) : (
                             <div className="space-y-3">
                                 {pastAppointments.map((appt) => {
-                                    const badge = statusBadge(appt.status);
+                                    // A past appointment that is still 'confirmed' means it was missed
+                                    const effectiveStatus = appt.status === 'confirmed' ? 'missed' : appt.status;
+                                    const badge = statusBadge(effectiveStatus);
                                     const hasRecord = !!appt.medicalRecord;
 
                                     return (
@@ -278,16 +285,29 @@ const PatientDashboard = () => {
                                             className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-gray-50 transition-all duration-200"
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                                                    appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                    appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
-                                                    {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
-                                                </div>
+                                                {appt.doctor?.profileImage ? (
+                                                    <img 
+                                                        src={appt.doctor.profileImage} 
+                                                        alt={appt.doctor.name} 
+                                                        className={`w-10 h-10 rounded-full object-cover shrink-0 ring-2 ${
+                                                            appt.status === 'completed' ? 'ring-emerald-100' :
+                                                            effectiveStatus === 'missed' ? 'ring-orange-100' :
+                                                            appt.status === 'cancelled' ? 'ring-red-100' : 'ring-gray-100'
+                                                        }`} 
+                                                    />
+                                                ) : (
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                                                        appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                                        effectiveStatus === 'missed' ? 'bg-orange-100 text-orange-700' :
+                                                        appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                        'bg-gray-100 text-gray-700'
+                                                    }`}>
+                                                        {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
                                                     <p className="font-semibold text-gray-900 truncate">
-                                                        {appt.doctor?.name ? `Dr. ${appt.doctor.name}` : 'Doctor'}
+                                                        {appt.doctor?.name ? (appt.doctor.name.startsWith('Dr.') ? appt.doctor.name : `Dr. ${appt.doctor.name}`) : 'Doctor'}
                                                     </p>
                                                     <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
                                                         <span className="flex items-center gap-1">
@@ -366,11 +386,17 @@ const PatientDashboard = () => {
                                     <div className="space-y-4">
                                         {/* Doctor Info */}
                                         <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm">
-                                                {(recordData.doctorId?.name || 'D').charAt(0).toUpperCase()}
-                                            </div>
+                                            {recordData.doctorId?.profileImage ? (
+                                                <img src={recordData.doctorId.profileImage} alt={recordData.doctorId.name} className="w-10 h-10 rounded-full object-cover shrink-0 ring-2 ring-white shadow-sm" />
+                                            ) : (
+                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                                                    {(recordData.doctorId?.name || 'D').charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
                                             <div>
-                                                <p className="font-semibold text-gray-900">{recordData.doctorId?.name ? `Dr. ${recordData.doctorId.name}` : 'Doctor'}</p>
+                                                <p className="font-semibold text-gray-900 truncate">
+                                                    {recordData.doctorId?.name ? (recordData.doctorId.name.startsWith('Dr.') ? recordData.doctorId.name : `Dr. ${recordData.doctorId.name}`) : 'Doctor'}
+                                                </p>
                                                 <p className="text-xs text-gray-500">{recordData.doctorId?.specialization || 'General Physician'}</p>
                                             </div>
                                         </div>

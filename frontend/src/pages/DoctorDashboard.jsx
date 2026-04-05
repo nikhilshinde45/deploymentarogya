@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
     CalendarDays, Loader2, Stethoscope, Video, Clock, Plus, History,
-    Users, CheckCircle2, FileText, Edit3, X, AlertCircle, Eye
+    Users, CheckCircle2, FileText, Edit3, X, AlertCircle, Eye, VideoOff, FolderClock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -28,9 +28,11 @@ const formatDate = (dateValue) => {
 
 const statusBadge = (status) => {
     const map = {
+        upcoming: { label: 'Upcoming', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
         confirmed: { label: 'Upcoming', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
         completed: { label: 'Completed', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
         cancelled: { label: 'Cancelled', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
+        past: { label: 'Past', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
     };
     return map[status] || map.confirmed;
 };
@@ -54,6 +56,7 @@ const DoctorDashboard = () => {
     const [recordForm, setRecordForm] = useState({ disease: '', symptoms: '', prescription: '', notes: '' });
     const [recordSubmitLoading, setRecordSubmitLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [modalClosing, setModalClosing] = useState(false);
 
     const loadDashboard = async () => {
         setLoading(true);
@@ -86,9 +89,9 @@ const DoctorDashboard = () => {
     }, [role]);
 
     const openWriteRecordModal = (appt) => {
+        setModalClosing(false);
         setWritingRecordFor(appt);
         if (appt.medicalRecord) {
-            // Pre-fill form with existing record data for editing
             setRecordForm({
                 disease: appt.medicalRecord.disease || '',
                 symptoms: appt.medicalRecord.symptoms || '',
@@ -103,9 +106,13 @@ const DoctorDashboard = () => {
     };
 
     const closeWriteRecordModal = () => {
-        setWritingRecordFor(null);
-        setRecordForm({ disease: '', symptoms: '', prescription: '', notes: '' });
-        setIsEditing(false);
+        setModalClosing(true);
+        setTimeout(() => {
+            setWritingRecordFor(null);
+            setRecordForm({ disease: '', symptoms: '', prescription: '', notes: '' });
+            setIsEditing(false);
+            setModalClosing(false);
+        }, 200);
     };
 
     const handleWriteRecordSubmit = async (e) => {
@@ -120,7 +127,6 @@ const DoctorDashboard = () => {
 
             pushToast(isEditing ? 'Medical record updated.' : 'Medical record saved.', 'success');
             closeWriteRecordModal();
-            // Reload dashboard to reflect changes
             await loadDashboard();
         } catch (err) {
             pushToast(err?.response?.data?.message || 'Failed to save record', 'error');
@@ -133,6 +139,13 @@ const DoctorDashboard = () => {
         if (!meetingId) return;
         pushToast('Opening consultation room', 'info', 1600);
         navigate(`/video/${encodeURIComponent(meetingId)}`);
+    };
+
+    /** Determine the display-status for a past appointment */
+    const pastDisplayStatus = (appt) => {
+        if (appt.status === 'completed') return 'completed';
+        if (appt.status === 'cancelled') return 'cancelled';
+        return 'past'; // confirmed but expired
     };
 
     // Stats
@@ -165,39 +178,26 @@ const DoctorDashboard = () => {
 
                 {/* ── Stat Cards ── */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Upcoming</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalUpcoming}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                                <CalendarDays className="w-5 h-5 text-blue-600" />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Completed</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalCompleted}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    {[
+                        { label: 'Upcoming', value: totalUpcoming, icon: CalendarDays, iconBg: 'bg-blue-50', iconColor: 'text-blue-600' },
+                        { label: 'Completed', value: totalCompleted, icon: CheckCircle2, iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+                        { label: 'Patients', value: totalPatients, icon: Users, iconBg: 'bg-violet-50', iconColor: 'text-violet-600' },
+                    ].map((stat, i) => (
+                        <div
+                            key={i}
+                            className="group bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-default"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{stat.label}</p>
+                                    <p className="text-3xl font-extrabold text-gray-900 mt-1">{stat.value}</p>
+                                </div>
+                                <div className={`w-11 h-11 rounded-xl ${stat.iconBg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                                    <stat.icon className={`w-5 h-5 ${stat.iconColor}`} />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Patients</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalPatients}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                                <Users className="w-5 h-5 text-violet-600" />
-                            </div>
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
                 {/* ── Upcoming Appointments ── */}
@@ -223,14 +223,14 @@ const DoctorDashboard = () => {
                         ) : (
                             <div className="space-y-3">
                                 {upcomingAppointments.map((appt) => {
-                                    const badge = statusBadge(appt.status);
+                                    const badge = statusBadge('upcoming');
                                     return (
                                         <div
                                             key={appt._id}
-                                            className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-blue-50/30 hover:border-blue-100 transition-all duration-200"
+                                            className="group flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-blue-50/40 hover:border-blue-200 hover:shadow-md hover:scale-[1.01] transition-all duration-200"
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
+                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
                                                     {(appt.patient?.name || 'P').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
@@ -254,9 +254,18 @@ const DoctorDashboard = () => {
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
+                                                {appt.patient?._id && (
+                                                    <button
+                                                        onClick={() => navigate(`/doctor/patient-history/${appt.patient._id}`)}
+                                                        className="px-3 py-2 bg-violet-50 text-violet-700 border border-violet-200 rounded-xl text-sm font-semibold hover:bg-violet-100 hover:shadow-md active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
+                                                    >
+                                                        <FolderClock className="w-4 h-4" />
+                                                        Patient History
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => startCall(appt.meetingId)}
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 hover:shadow-md active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
+                                                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-sm font-semibold hover:from-blue-700 hover:to-blue-800 hover:shadow-lg active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5 shadow-sm"
                                                 >
                                                     <Video className="w-4 h-4" />
                                                     Start Call
@@ -288,21 +297,21 @@ const DoctorDashboard = () => {
                         ) : (
                             <div className="space-y-3">
                                 {pastAppointments.map((appt) => {
-                                    const badge = statusBadge(appt.status);
+                                    const displayStatus = pastDisplayStatus(appt);
+                                    const badge = statusBadge(displayStatus);
                                     const hasRecord = !!appt.medicalRecord;
                                     const canWriteRecord = appt.status !== 'cancelled';
 
                                     return (
                                         <div
                                             key={appt._id}
-                                            className="flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-gray-50 transition-all duration-200"
+                                            className="group flex items-center justify-between gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-gray-50 hover:shadow-md hover:scale-[1.005] transition-all duration-200"
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
-                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                                                    appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                    appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-sm ${displayStatus === 'completed' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white' :
+                                                        displayStatus === 'cancelled' ? 'bg-gradient-to-br from-red-400 to-red-600 text-white' :
+                                                            'bg-gradient-to-br from-amber-400 to-amber-600 text-white'
+                                                    }`}>
                                                     {(appt.patient?.name || 'P').charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="min-w-0">
@@ -332,26 +341,34 @@ const DoctorDashboard = () => {
                                                         Record
                                                     </span>
                                                 )}
+                                                {/* Disabled Start Call button for past */}
+                                                <button
+                                                    disabled
+                                                    className="px-3 py-1.5 bg-gray-200 text-gray-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 opacity-50 cursor-not-allowed"
+                                                    title="Video call not available for past appointments"
+                                                >
+                                                    <VideoOff className="w-3.5 h-3.5" />
+                                                    Call Ended
+                                                </button>
                                                 {canWriteRecord && (
                                                     <button
                                                         onClick={() => openWriteRecordModal(appt)}
-                                                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 hover:shadow-sm active:scale-[0.97] ${
-                                                            hasRecord
+                                                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 hover:shadow-md active:scale-[0.97] ${hasRecord
                                                                 ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                                        }`}
+                                                                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-sm'
+                                                            }`}
                                                     >
                                                         {hasRecord ? (
                                                             <><Edit3 className="w-3 h-3" /> Edit Record</>
                                                         ) : (
-                                                            <><Plus className="w-3 h-3" /> Write Record</>
+                                                            <><Plus className="w-3 h-3" /> Add Record</>
                                                         )}
                                                     </button>
                                                 )}
                                                 {hasRecord && (
                                                     <button
                                                         onClick={() => navigate(`/doctor/records/${appt._id}`)}
-                                                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:shadow-sm active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
+                                                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 hover:shadow-md active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
                                                     >
                                                         <Eye className="w-3 h-3" />
                                                         View Records
@@ -368,17 +385,19 @@ const DoctorDashboard = () => {
 
                 {/* ── Record Writing / Editing Modal ── */}
                 {writingRecordFor && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={closeWriteRecordModal}>
+                    <div
+                        className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${modalClosing ? 'dd-modal-overlay-exit' : 'dd-modal-overlay-enter'}`}
+                        onClick={closeWriteRecordModal}
+                    >
                         <div
-                            className="bg-white rounded-2xl w-full max-w-lg shadow-2xl relative"
-                            style={{ animation: 'modalIn 0.22s ease-out' }}
+                            className={`bg-white rounded-2xl w-full max-w-lg shadow-2xl relative ${modalClosing ? 'dd-modal-exit' : 'dd-modal-enter'}`}
                             onClick={(e) => e.stopPropagation()}
                         >
                             {/* Modal Header */}
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isEditing ? 'bg-amber-100' : 'bg-emerald-100'}`}>
-                                        {isEditing ? <Edit3 className="w-4 h-4 text-amber-600" /> : <Plus className="w-4 h-4 text-emerald-600" />}
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${isEditing ? 'bg-gradient-to-br from-amber-400 to-amber-500' : 'bg-gradient-to-br from-emerald-400 to-emerald-500'}`}>
+                                        {isEditing ? <Edit3 className="w-4 h-4 text-white" /> : <Plus className="w-4 h-4 text-white" />}
                                     </div>
                                     <div>
                                         <h2 className="text-lg font-bold text-gray-900">
@@ -391,14 +410,19 @@ const DoctorDashboard = () => {
                                 </div>
                                 <button
                                     onClick={closeWriteRecordModal}
-                                    className="text-gray-400 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                                    className="text-gray-400 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-all duration-200 hover:rotate-90"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
 
                             {/* Modal Body */}
-                            <form onSubmit={handleWriteRecordSubmit} className="p-6 space-y-4">
+                            <form onSubmit={handleWriteRecordSubmit} className="p-6 space-y-5">
+                                {/* Section header */}
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    <Stethoscope className="w-3.5 h-3.5" />
+                                    Diagnosis Information
+                                </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold tracking-wide text-gray-500 uppercase">Disease / Diagnosis</label>
@@ -422,6 +446,12 @@ const DoctorDashboard = () => {
                                             required
                                         />
                                     </div>
+                                </div>
+
+                                {/* Section header */}
+                                <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest pt-1">
+                                    <FileText className="w-3.5 h-3.5" />
+                                    Prescription & Notes
                                 </div>
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-bold tracking-wide text-gray-500 uppercase">Prescription</label>
@@ -453,11 +483,10 @@ const DoctorDashboard = () => {
                                     <button
                                         type="submit"
                                         disabled={recordSubmitLoading}
-                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed ${
-                                            isEditing
-                                                ? 'bg-amber-600 hover:bg-amber-700'
-                                                : 'bg-emerald-600 hover:bg-emerald-700'
-                                        }`}
+                                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-lg ${isEditing
+                                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700'
+                                                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
+                                            }`}
                                     >
                                         {recordSubmitLoading ? (
                                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -475,11 +504,39 @@ const DoctorDashboard = () => {
                 )}
             </div>
 
-            {/* Inline animation keyframe */}
+            {/* Inline animation keyframes */}
             <style>{`
-                @keyframes modalIn {
-                    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+                @keyframes ddModalOverlayIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes ddModalOverlayOut {
+                    from { opacity: 1; }
+                    to { opacity: 0; }
+                }
+                @keyframes ddModalIn {
+                    from { opacity: 0; transform: scale(0.92) translateY(16px); }
                     to { opacity: 1; transform: scale(1) translateY(0); }
+                }
+                @keyframes ddModalOut {
+                    from { opacity: 1; transform: scale(1) translateY(0); }
+                    to { opacity: 0; transform: scale(0.92) translateY(16px); }
+                }
+                .dd-modal-overlay-enter {
+                    background: rgba(0, 0, 0, 0.4);
+                    backdrop-filter: blur(6px);
+                    animation: ddModalOverlayIn 0.25s ease-out both;
+                }
+                .dd-modal-overlay-exit {
+                    background: rgba(0, 0, 0, 0.4);
+                    backdrop-filter: blur(6px);
+                    animation: ddModalOverlayOut 0.2s ease-in both;
+                }
+                .dd-modal-enter {
+                    animation: ddModalIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+                }
+                .dd-modal-exit {
+                    animation: ddModalOut 0.2s ease-in both;
                 }
             `}</style>
         </DashboardLayout>

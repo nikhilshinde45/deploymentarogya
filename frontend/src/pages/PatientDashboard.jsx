@@ -36,6 +36,35 @@ const statusBadge = (status) => {
     return map[status] || map.confirmed;
 };
 
+const useCountUp = (end, duration = 1500) => {
+    const [count, setCount] = useState(0);
+    
+    useEffect(() => {
+        let startTime = null;
+        let animationFrame;
+
+        const animate = (currentTime) => {
+            if (!startTime) startTime = currentTime;
+            const progress = currentTime - startTime;
+            
+            const easeOutQuart = 1 - Math.pow(1 - progress / duration, 4);
+            const currentCount = Math.floor(end * easeOutQuart);
+            
+            if (progress < duration) {
+                setCount(Math.min(currentCount, end));
+                animationFrame = requestAnimationFrame(animate);
+            } else {
+                setCount(end);
+            }
+        };
+
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+    }, [end, duration]);
+
+    return count;
+};
+
 const PatientDashboard = () => {
     const navigate = useNavigate();
     const { pushToast } = useToast();
@@ -117,14 +146,21 @@ const PatientDashboard = () => {
     const totalCompleted = pastAppointments.filter(a => a.status === 'completed').length;
     const totalRecords = pastAppointments.filter(a => !!a.medicalRecord).length;
 
+    const animatedUpcoming = useCountUp(totalUpcoming);
+    const animatedCompleted = useCountUp(totalCompleted);
+    const animatedRecords = useCountUp(totalRecords);
+
     if (loading) {
         return (
             <DashboardLayout active="patient">
-                <div className="flex flex-col items-center justify-center gap-3 py-20">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <div className="space-y-8 animate-pulse relative">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="bg-white/60 rounded-3xl h-32 border border-gray-100"></div>
+                        ))}
                     </div>
-                    <p className="text-sm font-medium text-gray-500">Loading your dashboard…</p>
+                    <div className="bg-white/60 rounded-3xl h-64 border border-gray-100"></div>
+                    <div className="bg-white/60 rounded-3xl h-64 border border-gray-100"></div>
                 </div>
             </DashboardLayout>
         );
@@ -132,7 +168,10 @@ const PatientDashboard = () => {
 
     return (
         <DashboardLayout active="patient">
-            <div className="space-y-6">
+            {/* Atmospheric Background Blob */}
+            <div className="fixed top-0 left-0 w-full h-[60vh] bg-gradient-to-b from-blue-50/80 to-transparent z-[0] pointer-events-none blur-3xl"></div>
+
+            <div className="space-y-8 relative z-10">
                 {error && (
                     <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-5 flex items-center gap-3">
                         <AlertCircle className="w-5 h-5 shrink-0" />
@@ -140,45 +179,69 @@ const PatientDashboard = () => {
                     </div>
                 )}
 
-                {/* ── Stat Cards ── */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Upcoming</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalUpcoming}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
-                                <CalendarDays className="w-5 h-5 text-blue-600" />
+                {/* ── Stat Cards with Flow Animation ── */}
+                <div className="relative">
+                    {/* SVG Connector Dashed Lines (visible on md+) */}
+                    <svg className="absolute top-1/2 left-[16%] w-[68%] hidden md:block -z-10 text-blue-200 transform -translate-y-1/2" height="2" viewBox="0 0 100 2" preserveAspectRatio="none">
+                        <line x1="0" y1="1" x2="100" y2="1" stroke="currentColor" strokeWidth="2" strokeDasharray="6,8" className="animate-[dash_30s_linear_infinite]" />
+                    </svg>
+
+                    <style>{`
+                        @keyframes dash {
+                            to { stroke-dashoffset: -1000; }
+                        }
+                    `}</style>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 w-full">
+                        {/* 1. Upcoming */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[24px] p-6 shadow-sm border border-white ring-1 ring-black/5 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Upcoming</p>
+                                    <p className="text-4xl font-extrabold text-slate-800 tabular-nums tracking-tight">
+                                        {animatedUpcoming}
+                                    </p>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                    <CalendarDays className="w-6 h-6 text-blue-600 group-hover:animate-bounce" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Completed</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalCompleted}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+
+                        {/* 2. Completed */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[24px] p-6 shadow-sm border border-white ring-1 ring-black/5 hover:shadow-xl hover:shadow-emerald-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Completed</p>
+                                    <p className="text-4xl font-extrabold text-slate-800 tabular-nums tracking-tight">
+                                        {animatedCompleted}
+                                    </p>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                    <CheckCircle2 className="w-6 h-6 text-emerald-600 group-hover:rotate-12 transition-transform" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow duration-300">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Medical Records</p>
-                                <p className="text-3xl font-extrabold text-gray-900 mt-1">{totalRecords}</p>
-                            </div>
-                            <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-violet-600" />
+
+                        {/* 3. Records */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-[24px] p-6 shadow-sm border border-white ring-1 ring-black/5 hover:shadow-xl hover:shadow-violet-500/10 hover:-translate-y-1 transition-all duration-300 group cursor-default">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Medical Records</p>
+                                    <p className="text-4xl font-extrabold text-slate-800 tabular-nums tracking-tight">
+                                        {animatedRecords}
+                                    </p>
+                                </div>
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-inner">
+                                    <FileText className="w-6 h-6 text-violet-600 group-hover:-rotate-12 transition-transform" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* ── Upcoming Appointments ── */}
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-white/80 backdrop-blur-md border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
                     <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
                         <div>
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -257,7 +320,7 @@ const PatientDashboard = () => {
                 </div>
 
                 {/* ── Past Appointments ── */}
-                <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                <div className="bg-white/80 backdrop-blur-md border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
                     <div className="px-6 py-5 border-b border-gray-100">
                         <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                             <ShieldCheck className="w-5 h-5 text-gray-500" />

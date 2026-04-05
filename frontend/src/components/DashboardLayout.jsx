@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, ClipboardList, LogOut, Pill, Stethoscope, UserCog, CalendarClock, Menu, X } from 'lucide-react';
+import { Activity, ClipboardList, LogOut, Pill, Stethoscope, UserCog, CalendarClock, Menu, X, Home, Settings, User } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 const getUserInfo = () => {
@@ -19,13 +19,27 @@ const DashboardLayout = ({ active, children }) => {
     const role = userInfo?.role || '';
     const name = userInfo?.name || 'User';
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     const rawNavItems = [
+        {
+            key: 'patient',
+            label: 'Home',
+            to: '/',
+            icon: Home
+        },
         {
             key: 'patient',
             label: 'Patient Dashboard',
             to: '/patient-dashboard',
             icon: ClipboardList
+        },
+        {
+            key: 'patient',
+            label: 'Medicine',
+            to: '/medicines',
+            icon: Pill
         },
         {
             key: 'doctor',
@@ -55,9 +69,16 @@ const DashboardLayout = ({ active, children }) => {
 
     const navItems = rawNavItems.filter((item) => item.key === role);
 
-    const handleLogout = () => {
+    const handleLogoutClick = () => {
+        setShowLogoutModal(true);
+        setIsProfileDropdownOpen(false);
+        setIsMobileMenuOpen(false);
+    };
+
+    const confirmLogout = () => {
         localStorage.removeItem('userInfo');
         pushToast('Logged out successfully', 'success');
+        setShowLogoutModal(false);
         navigate('/');
     };
 
@@ -78,21 +99,44 @@ const DashboardLayout = ({ active, children }) => {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                            <span className="hidden sm:inline-flex items-center gap-1.5 font-medium text-gray-800">
-                                <Activity className="w-4 h-4 text-blue-600" />
-                                {name}
-                            </span>
-                            {userInfo?.token && (
-                                <button
-                                    type="button"
-                                    onClick={handleLogout}
-                                    className="ui-btn-secondary !py-1.5 !px-3 hidden sm:inline-flex items-center gap-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                >
-                                    <LogOut className="w-3.5 h-3.5" />
-                                    Logout
-                                </button>
-                            )}
+                        <div className="flex items-center gap-3 text-sm text-gray-600 relative">
+                            {userInfo?.token ? (
+                                <div className="hidden sm:block relative">
+                                    <button 
+                                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                                        className="flex items-center gap-2.5 hover:bg-gray-100 p-1.5 pr-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 group"
+                                    >
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md group-hover:scale-105 transition-transform">
+                                            {name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span className="font-semibold text-gray-800">{name}</span>
+                                    </button>
+
+                                    {/* Dropdown menu */}
+                                    {isProfileDropdownOpen && (
+                                        <div className="absolute right-0 mt-2 w-56 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="px-4 py-2 border-b border-gray-50/50 mb-1">
+                                                <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
+                                                <p className="text-xs text-gray-500 capitalize">{role}</p>
+                                            </div>
+                                            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition-colors">
+                                                <User className="w-4 h-4" /> Profile
+                                            </button>
+                                            <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 transition-colors">
+                                                <Settings className="w-4 h-4" /> Settings
+                                            </button>
+                                            <div className="border-t border-gray-50/50 my-1"></div>
+                                            <button 
+                                                onClick={handleLogoutClick}
+                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors group"
+                                            >
+                                                <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> Logout
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : null}
+                            
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="lg:hidden p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -139,7 +183,7 @@ const DashboardLayout = ({ active, children }) => {
                                     <span className="font-semibold text-gray-800 text-sm truncate">{name}</span>
                                 </div>
                                 <button
-                                    onClick={handleLogout}
+                                    onClick={handleLogoutClick}
                                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Logout"
                                 >
@@ -175,6 +219,36 @@ const DashboardLayout = ({ active, children }) => {
                     <main>{children}</main>
                 </div>
             </div>
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)}></div>
+                    <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full relative z-10 shadow-2xl animate-in zoom-in-95 fade-in duration-200">
+                        <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-5 drop-shadow-sm">
+                            <LogOut className="w-8 h-8 ml-1" />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-gray-900 mb-2">Ready to Leave?</h3>
+                        <p className="text-gray-500 text-center mb-8 text-sm">
+                            Are you sure you want to log out of your session? You will need to sign in again to access your dashboard.
+                        </p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => setShowLogoutModal(false)}
+                                className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-xl transition-colors active:scale-95"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={confirmLogout}
+                                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-md transition-all hover:shadow-lg active:scale-95"
+                            >
+                                Yes, Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -11,19 +11,24 @@ const slotSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        time: {
+        startTime: {
             type: String,
             required: true
         },
-        isBooked: {
-            type: Boolean,
-            default: false
+        endTime: {
+            type: String,
+            required: true
+        },
+        status: {
+            type: String,
+            enum: ['available', 'booked'],
+            default: 'available'
         }
     },
     { timestamps: true }
 );
 
-slotSchema.index({ doctor: 1, date: 1, time: 1 }, { unique: true });
-slotSchema.index({ doctor: 1, date: 1, isBooked: 1, time: 1 });
+slotSchema.index({ doctor: 1, date: 1, startTime: 1 }, { unique: true });
+slotSchema.index({ doctor: 1, date: 1, status: 1 });
 
 module.exports = mongoose.model('Slot', slotSchema);

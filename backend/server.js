@@ -1,8 +1,11 @@
 require('dotenv').config({ override: true });
 const fs = require('fs');
+const http = require('http');
 const express = require('express');
 const cors = require('cors');
+const { Server } = require('socket.io');
 const connectDB = require('./config/db');
+const initSocketHandler = require('./socketHandler');
 
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -12,18 +15,26 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const recordsRoutes = require('./routes/recordsRoutes');
-// console.log("🚀 Server started file running");
-// console.log("👉 adminRoutes:", adminRoutes);
 
 const app = express();
+const httpServer = http.createServer(app);
+
+// Socket.io setup — lightweight signaling only
+const io = new Server(httpServer, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+initSocketHandler(io);
 
 // Middleware
 app.use(express.json());
 app.use(cors());
 app.use((req, res, next) => {
-  const line = `${new Date().toISOString()} ${req.method} ${req.path} body=${JSON.stringify(req.body)}\n`;
-  fs.appendFileSync('request.log', line);
-  next();
+    const line = `${new Date().toISOString()} ${req.method} ${req.path} body=${JSON.stringify(req.body)}\n`;
+    fs.appendFileSync('request.log', line);
+    next();
 });
 
 // Connect Database
@@ -38,14 +49,10 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/records', recordsRoutes);
-app.use((req, res, next) => {
-  console.log("Incoming:", req.method, req.url);
-  next();
-});
 
 app.get('/', (req, res) => {
-  res.send('API is running...');
+    res.send('API is running...');
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));
+httpServer.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));

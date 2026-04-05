@@ -1,0 +1,15 @@
+{
+  "_id": "69d11e14ba7b3f35a725a41a",
+  "name": "Dr Shubhangi Phasale",
+  "email": "shubhange@gmail.com",
+  "password": "shubhangi123456",
+  "role": "doctor",
+  "specialization": "Gynecologist",
+  "experience": 10,
+  "bio": "I am Dr.shubhangi phasale a gynac helping and treating women from more than 10 years.",
+  "profileImage": "https://res.cloudinary.com/dhmvf1db7/image/upload/v1775312403/aarogyaai/doctors/efcc2ufr9wrx6susoveg.webp",
+  "createdAt": "2026-04-04T14:20:04.737Z",
+  "updatedAt": "2026-04-04T14:21:02.303Z",
+  "doctorId": "DOC007",
+  "__v": 0
+}

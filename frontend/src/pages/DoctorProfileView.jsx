@@ -87,14 +87,15 @@ const DoctorProfileView = () => {
                 }
             );
 
-            const roomId = response.data?.data?.meetingLink;
+            const meetingId = response.data?.data?.meetingId;
             setSlots((prev) => prev.filter((slot) => slot._id !== slotId));
-            setSlotMessage('Appointment booked successfully.');
+            setSlotMessage('Appointment booked successfully. Redirecting...');
             pushToast('Appointment booked successfully', 'success');
 
-            if (roomId) {
-                navigate(`/video/${roomId}`);
-            }
+            // Redirect to dashboard rather than triggering video directly
+            setTimeout(() => {
+                navigate('/patient-dashboard');
+            }, 1000);
         } catch (err) {
             const backendMessage = err?.response?.data?.message;
             setSlotMessage(backendMessage || 'Unable to book this slot.');
@@ -156,9 +157,12 @@ const DoctorProfileView = () => {
                             </p>
                         </div>
                         <div className="mt-6 sm:mt-0 flex shrink-0">
-                            <button className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all">
+                            <a
+                                href="#available-slots"
+                                className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all inline-block text-center"
+                            >
                                 Book Appointment
-                            </button>
+                            </a>
                         </div>
                     </div>
 
@@ -204,7 +208,7 @@ const DoctorProfileView = () => {
                         </div>
                     </div>
 
-                    <div className="mt-10 bg-white border border-gray-100 rounded-2xl p-6 sm:p-8 space-y-5">
+                    <div id="available-slots" className="mt-10 bg-white border border-gray-100 rounded-2xl p-6 sm:p-8 space-y-5">
                         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                             <div>
                                 <h3 className="text-xl font-bold text-gray-900">Available Slots</h3>
@@ -235,10 +239,12 @@ const DoctorProfileView = () => {
                                     <button
                                         key={slot._id}
                                         onClick={() => handleBookSlot(slot._id)}
-                                        disabled={slot.isBooked || bookingSlotId === slot._id}
+                                        disabled={slot.status === 'booked' || bookingSlotId === slot._id}
                                         className="px-4 py-2 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed transition-colors font-medium text-sm"
                                     >
-                                        {bookingSlotId === slot._id ? 'Booking...' : slot.time}
+                                        {bookingSlotId === slot._id
+                                            ? 'Booking...'
+                                            : `${slot.startTime} - ${slot.endTime}`}
                                     </button>
                                 ))}
                             </div>

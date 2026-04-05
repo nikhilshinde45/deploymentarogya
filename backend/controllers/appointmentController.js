@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Appointment = require('../models/Appointment');
 const DoctorProfile = require('../models/DoctorProfile');
@@ -29,7 +30,37 @@ const buildPatientPopulate = () => ({
 
 const toISODateString = () => new Date().toISOString().slice(0, 10);
 
-// @desc    Create doctor slots for a date
+/**
+ * Add minutes to a HH:mm time string and return the new HH:mm string.
+ */
+const addMinutes = (timeStr, minutes) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    const totalMinutes = h * 60 + m + minutes;
+    const newH = Math.floor(totalMinutes / 60);
+    const newM = totalMinutes % 60;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+};
+
+/**
+ * Generate time slot intervals from startTime to endTime with given duration.
+ * Example: generateTimeSlots('09:00', '11:00', 30)
+ *   → [{ startTime: '09:00', endTime: '09:30' }, { startTime: '09:30', endTime: '10:00' }, ...]
+ */
+const generateTimeSlots = (startTime, endTime, durationMinutes) => {
+    const slots = [];
+    let current = startTime;
+
+    while (true) {
+        const next = addMinutes(current, durationMinutes);
+        if (next > endTime) break;
+        slots.push({ startTime: current, endTime: next });
+        current = next;
+    }
+
+    return slots;
+};
+
+// @desc    Create doctor availability slots for a date
 // @route   POST /api/appointments/slots
 // @access  Private/Doctor
 const createSlots = async (req, res) => {
@@ -42,7 +73,9 @@ const createSlots = async (req, res) => {
             });
         }
 
-        const { date, times } = req.body;
+        const { date, startTime, endTime, slotDuration } = req.body;
+
+        // Validate date
         if (!date || !dateRegex.test(date)) {
             return res.status(400).json({
                 success: false,
@@ -50,32 +83,81 @@ const createSlots = async (req, res) => {
             });
         }
 
-        if (!Array.isArray(times) || times.length === 0) {
+        // Prevent past dates
+        const today = toISODateString();
+        if (date < today) {
             return res.status(400).json({
                 success: false,
-                message: 'times must be a non-empty array'
+                message: 'Cannot create slots for a past date'
             });
         }
 
-        const normalizedTimes = [...new Set(times.map((t) => String(t).trim()))].sort();
-        const invalidTime = normalizedTimes.find((t) => !timeRegex.test(t));
-        if (invalidTime) {
+        // Validate times
+        if (!startTime || !timeRegex.test(startTime)) {
             return res.status(400).json({
                 success: false,
-                message: `Invalid time format: ${invalidTime}. Use HH:mm`
+                message: 'Valid startTime is required in HH:mm format'
             });
         }
 
-        const operations = normalizedTimes.map((time) => ({
+        if (!endTime || !timeRegex.test(endTime)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid endTime is required in HH:mm format'
+            });
+        }
+
+        if (startTime >= endTime) {
+            return res.status(400).json({
+                success: false,
+                message: 'startTime must be before endTime'
+            });
+        }
+
+        // Validate duration
+        const allowedDurations = [15, 20, 30, 45, 60];
+        const duration = Number(slotDuration);
+        if (!allowedDurations.includes(duration)) {
+            return res.status(400).json({
+                success: false,
+                message: `slotDuration must be one of: ${allowedDurations.join(', ')} minutes`
+            });
+        }
+
+        // Generate time intervals
+        const timeSlots = generateTimeSlots(startTime, endTime, duration);
+        if (timeSlots.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No slots could be generated for the given time range and duration'
+            });
+        }
+
+        // Upsert each slot (skip duplicates)
+        const operations = timeSlots.map((slot) => ({
             updateOne: {
-                filter: { doctor: doctorProfile._id, date, time },
-                update: { $setOnInsert: { doctor: doctorProfile._id, date, time, isBooked: false } },
+                filter: { doctor: doctorProfile._id, date, startTime: slot.startTime },
+                update: {
+                    $setOnInsert: {
+                        doctor: doctorProfile._id,
+                        date,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        status: 'available'
+                    }
+                },
                 upsert: true
             }
         }));
 
         const writeResult = await Slot.bulkWrite(operations, { ordered: false });
-        const slots = await Slot.find({ doctor: doctorProfile._id, date, time: { $in: normalizedTimes } }).sort({ time: 1 });
+
+        const allStartTimes = timeSlots.map((s) => s.startTime);
+        const slots = await Slot.find({
+            doctor: doctorProfile._id,
+            date,
+            startTime: { $in: allStartTimes }
+        }).sort({ startTime: 1 });
 
         res.status(201).json({
             success: true,
@@ -83,7 +165,7 @@ const createSlots = async (req, res) => {
             data: {
                 slots,
                 createdCount: writeResult.upsertedCount || 0,
-                totalRequested: normalizedTimes.length
+                totalRequested: timeSlots.length
             }
         });
     } catch (error) {
@@ -115,8 +197,8 @@ const getAvailableSlots = async (req, res) => {
         const slots = await Slot.find({
             doctor: doctorProfile._id,
             date,
-            isBooked: false
-        }).sort({ time: 1 });
+            status: 'available'
+        }).sort({ startTime: 1 });
 
         res.status(200).json({
             success: true,
@@ -144,28 +226,43 @@ const bookAppointment = async (req, res) => {
             });
         }
 
+        // Atomic: only book if status is still 'available'
         const slot = await Slot.findOneAndUpdate(
-            { _id: slotId, isBooked: false },
-            { isBooked: true },
+            { _id: slotId, status: 'available' },
+            { status: 'booked' },
             { new: true }
         );
 
         if (!slot) {
             return res.status(409).json({
                 success: false,
-                message: 'Slot already booked'
+                message: 'Slot is unavailable or already booked'
+            });
+        }
+
+        // Prevent booking past date/time
+        const now = new Date();
+        const slotDateTime = new Date(`${slot.date}T${slot.startTime}:00`);
+        if (slotDateTime < now) {
+            // Roll back the slot status
+            await Slot.findByIdAndUpdate(slot._id, { status: 'available' });
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot book a slot in the past'
             });
         }
 
         try {
+            const meetingId = crypto.randomUUID();
+
             const appointment = await Appointment.create({
                 doctor: slot.doctor,
                 patient: patientId,
                 slot: slot._id,
                 date: slot.date,
-                time: slot.time,
-                meetingLink: `room-${slot._id}`,
-                status: 'scheduled'
+                startTime: slot.startTime,
+                meetingId,
+                status: 'confirmed'
             });
 
             return res.status(201).json({
@@ -174,7 +271,8 @@ const bookAppointment = async (req, res) => {
                 data: appointment
             });
         } catch (createError) {
-            await Slot.findByIdAndUpdate(slot._id, { isBooked: false });
+            // Roll back slot on appointment creation failure
+            await Slot.findByIdAndUpdate(slot._id, { status: 'available' });
 
             if (createError.code === 11000) {
                 return res.status(409).json({
@@ -219,7 +317,7 @@ const cancelAppointment = async (req, res) => {
 
         appointment.status = 'cancelled';
         await appointment.save();
-        await Slot.findByIdAndUpdate(appointment.slot, { isBooked: false });
+        await Slot.findByIdAndUpdate(appointment.slot, { status: 'available' });
 
         res.status(200).json({
             success: true,
@@ -238,7 +336,7 @@ const cancelAppointment = async (req, res) => {
 const getUpcomingAppointments = async (req, res) => {
     try {
         const today = toISODateString();
-        const query = { status: 'scheduled', date: { $gte: today } };
+        const query = { status: 'confirmed', date: { $gte: today } };
 
         if (req.user.role === 'patient') {
             query.patient = req.user.id;
@@ -255,7 +353,7 @@ const getUpcomingAppointments = async (req, res) => {
         const appointments = await Appointment.find(query)
             .populate(buildDoctorPopulate())
             .populate(buildPatientPopulate())
-            .sort({ date: 1, time: 1 });
+            .sort({ date: 1, startTime: 1 });
 
         res.status(200).json({
             success: true,
@@ -278,17 +376,22 @@ const getPatientAppointments = async (req, res) => {
         const [upcomingAppointments, pastAppointments] = await Promise.all([
             Appointment.find({
                 patient: req.user.id,
-                status: 'scheduled',
+                status: 'confirmed',
                 date: { $gte: today }
             })
                 .populate(buildDoctorPopulate())
-                .sort({ date: 1, time: 1 }),
+                .populate('medicalRecord')
+                .sort({ date: 1, startTime: 1 }),
             Appointment.find({
                 patient: req.user.id,
-                date: { $lt: today }
+                $or: [
+                    { date: { $lt: today } },
+                    { status: { $in: ['completed', 'cancelled'] } }
+                ]
             })
                 .populate(buildDoctorPopulate())
-                .sort({ date: 1, time: 1 })
+                .populate('medicalRecord')
+                .sort({ date: -1, startTime: -1 })
         ]);
 
         res.status(200).json({
@@ -302,7 +405,7 @@ const getPatientAppointments = async (req, res) => {
     }
 };
 
-// @desc    Get upcoming appointments + unique patient list for doctor
+// @desc    Get upcoming + past appointments + unique patient list for doctor
 // @route   GET /api/appointments/doctor
 // @access  Private/Doctor
 const getDoctorAppointments = async (req, res) => {
@@ -317,17 +420,22 @@ const getDoctorAppointments = async (req, res) => {
         const [upcomingAppointments, pastAppointments] = await Promise.all([
             Appointment.find({
                 doctor: doctorProfile._id,
-                status: 'scheduled',
+                status: 'confirmed',
                 date: { $gte: today }
             })
                 .populate(buildPatientPopulate())
-                .sort({ date: 1, time: 1 }),
+                .populate('medicalRecord')
+                .sort({ date: 1, startTime: 1 }),
             Appointment.find({
                 doctor: doctorProfile._id,
-                date: { $lt: today }
+                $or: [
+                    { date: { $lt: today } },
+                    { status: { $in: ['completed', 'cancelled'] } }
+                ]
             })
                 .populate(buildPatientPopulate())
-                .sort({ date: 1, time: 1 })
+                .populate('medicalRecord')
+                .sort({ date: -1, startTime: -1 })
         ]);
 
         const all = [...upcomingAppointments, ...pastAppointments];
@@ -345,6 +453,7 @@ const getDoctorAppointments = async (req, res) => {
         res.status(200).json({
             success: true,
             upcomingAppointments,
+            pastAppointments,
             patientList: Array.from(unique.values())
         });
     } catch (error) {

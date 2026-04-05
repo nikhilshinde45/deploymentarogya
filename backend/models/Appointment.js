@@ -22,24 +22,29 @@ const appointmentSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        time: {
-            type: String,
-            required: true
-        },
-        meetingLink: {
+        startTime: {
             type: String,
             required: true
         },
         status: {
             type: String,
-            enum: ['scheduled', 'completed', 'cancelled'],
-            default: 'scheduled'
+            enum: ['confirmed', 'completed', 'cancelled'],
+            default: 'confirmed'
+        },
+        meetingId: {
+            type: String,
+            required: true,
+            unique: true
+        },
+        medicalRecord: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'MedicalRecord'
         }
     },
     { timestamps: true }
 );
 
-appointmentSchema.index({ patient: 1, status: 1, date: 1, time: 1 });
-appointmentSchema.index({ doctor: 1, status: 1, date: 1, time: 1 });
+appointmentSchema.index({ patient: 1, status: 1, date: 1, startTime: 1 });
+appointmentSchema.index({ doctor: 1, status: 1, date: 1, startTime: 1 });
 
 module.exports = mongoose.model('Appointment', appointmentSchema);

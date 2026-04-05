@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, ClipboardList, LogOut, Pill, Stethoscope, UserCog } from 'lucide-react';
+import { Activity, ClipboardList, LogOut, Pill, Stethoscope, UserCog, CalendarClock } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 
 const getUserInfo = () => {
@@ -19,7 +19,7 @@ const DashboardLayout = ({ active, children }) => {
     const role = userInfo?.role || '';
     const name = userInfo?.name || 'User';
 
-    const navItems = [
+    const rawNavItems = [
         {
             key: 'patient',
             label: 'Patient Dashboard',
@@ -33,6 +33,12 @@ const DashboardLayout = ({ active, children }) => {
             icon: Stethoscope
         },
         {
+            key: 'doctor',
+            label: 'Add Availability',
+            to: '/doctor/slots',
+            icon: CalendarClock
+        },
+        {
             key: 'admin',
             label: 'Admin Dashboard',
             to: '/admin-dashboard',
@@ -44,7 +50,9 @@ const DashboardLayout = ({ active, children }) => {
             to: '/pharmacist-dashboard',
             icon: Pill
         }
-    ].filter((item) => item.key === role);
+    ];
+
+    const navItems = rawNavItems.filter((item) => item.key === role);
 
     const handleLogout = () => {
         localStorage.removeItem('userInfo');
@@ -101,7 +109,7 @@ const DashboardLayout = ({ active, children }) => {
                                     const isActive = active === item.key || location.pathname === item.to;
                                     return (
                                         <Link
-                                            key={item.key}
+                                            key={item.to}
                                             to={item.to}
                                             className={[
                                                 'w-full flex items-center gap-3 px-3 py-2 rounded-xl border transition-colors',

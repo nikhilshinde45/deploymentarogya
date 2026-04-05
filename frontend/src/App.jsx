@@ -6,9 +6,11 @@ import DoctorProfileView from './pages/DoctorProfileView';
 import VideoCall from './pages/VideoCall';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
+import DoctorManageSlots from './pages/DoctorManageSlots';
 import Medicines from './pages/Medicines';
 import PharmacistDashboard from './pages/PharmacistDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import DoctorRecordView from './pages/DoctorRecordView';
 import PatientHealthAssistantPlaceholder from './components/PatientHealthAssistantPlaceholder';
 import { useMemo } from 'react';
 import { LogOut } from 'lucide-react';
@@ -31,7 +33,10 @@ const AppContent = () => {
 
   const navItems = useMemo(() => {
     if (role === 'patient') return [{ label: 'Patient Dashboard', to: '/patient-dashboard' }];
-    if (role === 'doctor') return [{ label: 'Doctor Dashboard', to: '/doctor-dashboard' }];
+    if (role === 'doctor') return [
+      { label: 'Doctor Dashboard', to: '/doctor-dashboard' },
+      { label: 'Manage Slots', to: '/doctor/slots' }
+    ];
     if (role === 'admin') return [{ label: 'Admin Dashboard', to: '/admin-dashboard' }];
     if (role === 'pharmacist') return [{ label: 'Pharmacist Dashboard', to: '/pharmacist-dashboard' }];
     return [];
@@ -91,6 +96,8 @@ const AppContent = () => {
             <Route path="/video/:roomId" element={<VideoCall />} />
             <Route path="/patient-dashboard" element={<PatientDashboard />} />
             <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+            <Route path="/doctor/slots" element={<DoctorManageSlots />} />
+            <Route path="/doctor/records/:appointmentId" element={<DoctorRecordView />} />
             <Route path="/medicines" element={<Medicines />} />
             <Route path="/pharmacist-dashboard" element={<PharmacistDashboard />} />
             <Route path="/admin-dashboard" element={<AdminDashboard />} />

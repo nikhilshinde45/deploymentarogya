@@ -371,17 +371,27 @@ const getUpcomingAppointments = async (req, res) => {
 // @access  Private/Patient
 const getPatientAppointments = async (req, res) => {
     try {
+        const now = new Date();
         const today = toISODateString();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-        const [upcomingAppointments, pastAppointments] = await Promise.all([
+        const [confirmedFutureDays, confirmedToday, historicAppointments] = await Promise.all([
             Appointment.find({
                 patient: req.user.id,
                 status: 'confirmed',
-                date: { $gte: today }
+                date: { $gt: today }
             })
                 .populate(buildDoctorPopulate())
                 .populate('medicalRecord')
                 .sort({ date: 1, startTime: 1 }),
+            Appointment.find({
+                patient: req.user.id,
+                status: 'confirmed',
+                date: today
+            })
+                .populate(buildDoctorPopulate())
+                .populate('medicalRecord')
+                .sort({ startTime: 1 }),
             Appointment.find({
                 patient: req.user.id,
                 $or: [
@@ -394,10 +404,29 @@ const getPatientAppointments = async (req, res) => {
                 .sort({ date: -1, startTime: -1 })
         ]);
 
+        // Split today's confirmed by time
+        const todayUpcoming = [];
+        const todayPast = [];
+        for (const appt of confirmedToday) {
+            if (appt.startTime > currentTime) {
+                todayUpcoming.push(appt);
+            } else {
+                todayPast.push(appt);
+            }
+        }
+
+        const upcomingAppointments = [...todayUpcoming, ...confirmedFutureDays];
+        const pastIds = new Set(historicAppointments.map(a => a._id.toString()));
+        const mergedPast = [...todayPast.filter(a => !pastIds.has(a._id.toString())), ...historicAppointments];
+        mergedPast.sort((a, b) => {
+            if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+            return a.startTime < b.startTime ? 1 : -1;
+        });
+
         res.status(200).json({
             success: true,
             upcomingAppointments,
-            pastAppointments
+            pastAppointments: mergedPast
         });
     } catch (error) {
         console.error(error);
@@ -410,22 +439,36 @@ const getPatientAppointments = async (req, res) => {
 // @access  Private/Doctor
 const getDoctorAppointments = async (req, res) => {
     try {
+        const now = new Date();
         const today = toISODateString();
+        const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
         const doctorProfile = req.user;
         if (!doctorProfile) {
             return res.status(404).json({ success: false, message: 'Doctor profile not found' });
         }
 
-        const [upcomingAppointments, pastAppointments] = await Promise.all([
+        // Fetch all confirmed appointments for today, future confirmed, and already-past/completed/cancelled
+        const [confirmedFutureDays, confirmedToday, historicAppointments] = await Promise.all([
+            // Confirmed appointments on future dates (definitely upcoming)
             Appointment.find({
                 doctor: doctorProfile._id,
                 status: 'confirmed',
-                date: { $gte: today }
+                date: { $gt: today }
             })
                 .populate(buildPatientPopulate())
                 .populate('medicalRecord')
                 .sort({ date: 1, startTime: 1 }),
+            // Confirmed appointments today (need time-based split)
+            Appointment.find({
+                doctor: doctorProfile._id,
+                status: 'confirmed',
+                date: today
+            })
+                .populate(buildPatientPopulate())
+                .populate('medicalRecord')
+                .sort({ startTime: 1 }),
+            // Already past-date confirmed, completed, or cancelled
             Appointment.find({
                 doctor: doctorProfile._id,
                 $or: [
@@ -438,7 +481,28 @@ const getDoctorAppointments = async (req, res) => {
                 .sort({ date: -1, startTime: -1 })
         ]);
 
-        const all = [...upcomingAppointments, ...pastAppointments];
+        // Split today's confirmed appointments by startTime vs current time
+        const todayUpcoming = [];
+        const todayPast = [];
+        for (const appt of confirmedToday) {
+            if (appt.startTime > currentTime) {
+                todayUpcoming.push(appt);
+            } else {
+                todayPast.push(appt);
+            }
+        }
+
+        const upcomingAppointments = [...todayUpcoming, ...confirmedFutureDays];
+        // Merge today's expired into past, de-duplicate by _id
+        const pastIds = new Set(historicAppointments.map(a => a._id.toString()));
+        const mergedPast = [...todayPast.filter(a => !pastIds.has(a._id.toString())), ...historicAppointments];
+        // Sort past descending
+        mergedPast.sort((a, b) => {
+            if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+            return a.startTime < b.startTime ? 1 : -1;
+        });
+
+        const all = [...upcomingAppointments, ...mergedPast];
         const unique = new Map();
         for (const appt of all) {
             if (!appt.patient) continue;
@@ -453,7 +517,7 @@ const getDoctorAppointments = async (req, res) => {
         res.status(200).json({
             success: true,
             upcomingAppointments,
-            pastAppointments,
+            pastAppointments: mergedPast,
             patientList: Array.from(unique.values())
         });
     } catch (error) {

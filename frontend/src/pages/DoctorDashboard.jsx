@@ -30,11 +30,32 @@ const statusBadge = (status) => {
     const map = {
         upcoming: { label: 'Upcoming', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
         confirmed: { label: 'Upcoming', bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
+        ongoing: { label: 'Ongoing', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500 animate-pulse' },
         completed: { label: 'Completed', bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
         cancelled: { label: 'Cancelled', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', dot: 'bg-red-500' },
         past: { label: 'Past', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
     };
     return map[status] || map.confirmed;
+};
+
+/**
+ * Determine effective display status for an appointment.
+ * If confirmed and currently between startTime and endTime → 'ongoing'
+ */
+const getDisplayStatus = (appt) => {
+    if (appt.status !== 'confirmed') return appt.status;
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    if (appt.date !== today) return appt.status;
+
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const endTime = appt.slot?.endTime || appt.startTime;
+
+    if (currentTime >= appt.startTime && currentTime < endTime) {
+        return 'ongoing';
+    }
+    return appt.status;
 };
 
 const DoctorDashboard = () => {
@@ -223,7 +244,7 @@ const DoctorDashboard = () => {
                         ) : (
                             <div className="space-y-3">
                                 {upcomingAppointments.map((appt) => {
-                                    const badge = statusBadge('upcoming');
+                                    const badge = statusBadge(getDisplayStatus(appt));
                                     return (
                                         <div
                                             key={appt._id}

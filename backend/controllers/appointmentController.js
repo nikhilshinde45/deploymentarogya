@@ -28,6 +28,11 @@ const buildPatientPopulate = () => ({
     select: 'name email uniqueId role'
 });
 
+const buildSlotPopulate = () => ({
+    path: 'slot',
+    select: 'startTime endTime date status'
+});
+
 const toISODateString = () => new Date().toISOString().slice(0, 10);
 
 /**
@@ -382,6 +387,7 @@ const getPatientAppointments = async (req, res) => {
                 date: { $gt: today }
             })
                 .populate(buildDoctorPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ date: 1, startTime: 1 }),
             Appointment.find({
@@ -390,6 +396,7 @@ const getPatientAppointments = async (req, res) => {
                 date: today
             })
                 .populate(buildDoctorPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ startTime: 1 }),
             Appointment.find({
@@ -400,15 +407,18 @@ const getPatientAppointments = async (req, res) => {
                 ]
             })
                 .populate(buildDoctorPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ date: -1, startTime: -1 })
         ]);
 
-        // Split today's confirmed by time
+        // Split today's confirmed by endTime (not startTime)
+        // Appointment stays upcoming/ongoing until endTime passes
         const todayUpcoming = [];
         const todayPast = [];
         for (const appt of confirmedToday) {
-            if (appt.startTime > currentTime) {
+            const endTime = appt.slot?.endTime || appt.startTime;
+            if (endTime > currentTime) {
                 todayUpcoming.push(appt);
             } else {
                 todayPast.push(appt);
@@ -457,6 +467,7 @@ const getDoctorAppointments = async (req, res) => {
                 date: { $gt: today }
             })
                 .populate(buildPatientPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ date: 1, startTime: 1 }),
             // Confirmed appointments today (need time-based split)
@@ -466,6 +477,7 @@ const getDoctorAppointments = async (req, res) => {
                 date: today
             })
                 .populate(buildPatientPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ startTime: 1 }),
             // Already past-date confirmed, completed, or cancelled
@@ -477,15 +489,18 @@ const getDoctorAppointments = async (req, res) => {
                 ]
             })
                 .populate(buildPatientPopulate())
+                .populate(buildSlotPopulate())
                 .populate('medicalRecord')
                 .sort({ date: -1, startTime: -1 })
         ]);
 
-        // Split today's confirmed appointments by startTime vs current time
+        // Split today's confirmed appointments by endTime (not startTime)
+        // Appointment stays upcoming/ongoing until endTime passes
         const todayUpcoming = [];
         const todayPast = [];
         for (const appt of confirmedToday) {
-            if (appt.startTime > currentTime) {
+            const endTime = appt.slot?.endTime || appt.startTime;
+            if (endTime > currentTime) {
                 todayUpcoming.push(appt);
             } else {
                 todayPast.push(appt);

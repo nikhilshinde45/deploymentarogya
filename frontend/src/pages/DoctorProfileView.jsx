@@ -14,7 +14,48 @@ const DoctorProfileView = () => {
     const [slotLoading, setSlotLoading] = useState(false);
     const [bookingSlotId, setBookingSlotId] = useState('');
     const [slotMessage, setSlotMessage] = useState('');
+    const [selectedSlot, setSelectedSlot] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const { pushToast } = useToast();
+
+    const today = new Date().toISOString().slice(0, 10);
+    const selectedDateIsToday = selectedDate === today;
+    const now = new Date();
+
+    const isPastSlot = (slot) => {
+        if (!slot || !selectedDate) return false;
+        if (!selectedDateIsToday) return false;
+
+        const slotDateTime = new Date(`${selectedDate}T${slot.startTime}:00`);
+        return slotDateTime.getTime() <= now.getTime();
+    };
+
+    const sortedSlots = [...slots].sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    const handleSelectSlot = (slot) => {
+        if (slot.status === 'booked' || isPastSlot(slot)) {
+            return;
+        }
+
+        setSelectedSlot(slot);
+        setShowConfirmModal(true);
+        setSlotMessage('');
+    };
+
+    const closeConfirmModal = () => {
+        setShowConfirmModal(false);
+        setSelectedSlot(null);
+    };
+
+    const confirmBooking = async () => {
+        if (!selectedSlot) {
+            return;
+        }
+
+        setShowConfirmModal(false);
+        await handleBookSlot(selectedSlot._id);
+        setSelectedSlot(null);
+    };
 
     useEffect(() => {
         const fetchDoctor = async () => {
@@ -241,18 +282,32 @@ const DoctorProfileView = () => {
                             <p className="text-sm text-gray-500">No available slots for this date.</p>
                         ) : (
                             <div className="flex flex-wrap gap-3">
-                                {slots.map((slot) => (
-                                    <button
-                                        key={slot._id}
-                                        onClick={() => handleBookSlot(slot._id)}
-                                        disabled={slot.status === 'booked' || bookingSlotId === slot._id}
-                                        className="px-4 py-2 rounded-xl border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed transition-colors font-medium text-sm"
-                                    >
-                                        {bookingSlotId === slot._id
-                                            ? 'Booking...'
-                                            : `${slot.startTime} - ${slot.endTime}`}
-                                    </button>
-                                ))}
+                                {sortedSlots.map((slot) => {
+                                    const expired = isPastSlot(slot);
+                                    const disabled = slot.status === 'booked' || expired || bookingSlotId === slot._id;
+
+                                    return (
+                                        <button
+                                            key={slot._id}
+                                            onClick={() => handleSelectSlot(slot)}
+                                            disabled={disabled}
+                                            className={`group min-w-[160px] px-4 py-3 rounded-3xl border transition-all text-sm font-semibold ${disabled ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed opacity-50' : 'bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 shadow-sm'} ${slot.status === 'booked' ? 'opacity-70' : ''}`}
+                                        >
+                                            <div className="flex items-center justify-between gap-3">
+                                                <span>
+                                                    {bookingSlotId === slot._id
+                                                        ? 'Booking...'
+                                                        : `${slot.startTime} - ${slot.endTime}`}
+                                                </span>
+                                                {(expired || slot.status === 'booked') && (
+                                                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.16em] ${expired ? 'bg-gray-200 text-gray-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                        {expired ? 'Expired' : 'Booked'}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
 
@@ -260,6 +315,58 @@ const DoctorProfileView = () => {
                             <p className="text-sm font-medium text-gray-700">{slotMessage}</p>
                         )}
                     </div>
+
+                    {showConfirmModal && selectedSlot && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 backdrop-blur-sm bg-slate-900/40">
+                            <div className="w-full max-w-md rounded-3xl bg-white/95 border border-slate-200 shadow-2xl shadow-slate-900/10 backdrop-brightness-110 p-6 transform transition duration-300 ease-out scale-100 opacity-100">
+                                <div className="space-y-4">
+                                    <div className="rounded-3xl bg-slate-50 p-5 border border-slate-100 shadow-sm">
+                                        <p className="text-sm text-sky-600 uppercase tracking-[0.24em] font-semibold">Confirm Appointment</p>
+                                        <h2 className="mt-3 text-2xl font-bold text-slate-900">Confirm Appointment</h2>
+                                        <p className="text-sm text-slate-500">Please review the details before booking.</p>
+                                    </div>
+
+                                    <div className="space-y-3 text-slate-700">
+                                        <div className="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                                            <p className="text-sm text-slate-500 uppercase tracking-[0.18em] font-semibold">Doctor</p>
+                                            <p className="mt-1 text-lg font-semibold text-slate-900">{doctor?.name.startsWith('Dr.') ? doctor.name : `Dr. ${doctor.name}`}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                                                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 font-bold">Date</p>
+                                                <p className="mt-2 text-base text-slate-900">{new Date(selectedDate).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                                            </div>
+                                            <div className="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                                                <p className="text-xs uppercase tracking-[0.22em] text-slate-400 font-bold">Time</p>
+                                                <p className="mt-2 text-base text-slate-900">{`${selectedSlot.startTime} - ${selectedSlot.endTime}`}</p>
+                                            </div>
+                                        </div>
+                                        <p className="text-sm text-slate-600 leading-relaxed">
+                                            Are you sure you want to book this appointment?
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                                        <button
+                                            type="button"
+                                            onClick={closeConfirmModal}
+                                            className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-50 transition"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={confirmBooking}
+                                            className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-sky-600 text-white font-semibold shadow-lg shadow-sky-600/20 hover:bg-sky-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                            disabled={bookingSlotId === selectedSlot._id}
+                                        >
+                                            {bookingSlotId === selectedSlot._id ? 'Booking...' : 'Confirm Booking'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

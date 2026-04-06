@@ -564,30 +564,6 @@ const AdminDashboard = () => {
             </div>
 
             <form className="space-y-5 mt-4" onSubmit={submitForm}>
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Profile Image {!editingId && modalType === 'doctor' ? <span className="text-blue-600">*</span> : <span className="text-gray-400 font-normal ml-1">(Optional)</span>}
-                </label>
-                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50/80 hover:bg-blue-50/50 hover:border-blue-400 transition-all group relative overflow-hidden">
-                  {imagePreview ? (
-                    <div className="absolute inset-0 w-full h-full p-4 flex flex-col sm:flex-row items-center justify-center gap-4 bg-white/60 backdrop-blur-sm z-10 transition-colors mx-auto text-center sm:text-left">
-                      <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-md bg-white shrink-0" />
-                      <div>
-                        <p className="text-base font-bold text-gray-800">{imageFile ? imageFile.name : 'Current Image'}</p>
-                        <p className="text-sm font-semibold text-blue-600 mt-0.5 underline decoration-blue-200">Click to change</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2.5 text-gray-400 group-hover:text-blue-600 transition-colors">
-                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center border border-gray-100 group-hover:border-blue-200"><Upload className="w-6 h-6" /></div>
-                      <span className="block text-sm font-semibold">Upload Image</span>
-                    </div>
-                  )}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
-                </label>
-              </div>
-
               {/* Shared fields */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Full Name <span className="text-blue-600">*</span></label>
@@ -632,6 +608,7 @@ const AdminDashboard = () => {
 
               {/* Type-specific fields */}
               {modalType === 'doctor' ? (
+                <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1.5">Specialization <span className="text-blue-600">*</span></label>
@@ -652,6 +629,17 @@ const AdminDashboard = () => {
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Bio <span className="text-gray-400 font-normal ml-1">(Optional)</span></label>
+                  <textarea
+                    className="w-full px-4 py-2.5 text-base border-2 border-gray-100 rounded-xl bg-gray-50/50 focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100 outline-none resize-y min-h-[80px]"
+                    placeholder="Brief description about the doctor's expertise, background, etc."
+                    value={docForm.bio}
+                    onChange={(e) => setDocForm({...docForm, bio: e.target.value})}
+                    rows={3}
+                  />
+                </div>
+                </>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -674,6 +662,30 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+
+              {/* Image Upload - Last field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Profile Image {!editingId && modalType === 'doctor' ? <span className="text-blue-600">*</span> : <span className="text-gray-400 font-normal ml-1">(Optional)</span>}
+                </label>
+                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50/80 hover:bg-blue-50/50 hover:border-blue-400 transition-all group relative overflow-hidden">
+                  {imagePreview ? (
+                    <div className="absolute inset-0 w-full h-full p-4 flex flex-col sm:flex-row items-center justify-center gap-4 bg-white/60 backdrop-blur-sm z-10 transition-colors mx-auto text-center sm:text-left">
+                      <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-full object-cover ring-4 ring-white shadow-md bg-white shrink-0" />
+                      <div>
+                        <p className="text-base font-bold text-gray-800">{imageFile ? imageFile.name : 'Current Image'}</p>
+                        <p className="text-sm font-semibold text-blue-600 mt-0.5 underline decoration-blue-200">Click to change</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2.5 text-gray-400 group-hover:text-blue-600 transition-colors">
+                      <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center border border-gray-100 group-hover:border-blue-200"><Upload className="w-6 h-6" /></div>
+                      <span className="block text-sm font-semibold">Upload Image</span>
+                    </div>
+                  )}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
+                </label>
+              </div>
 
               {formError && (
                 <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg font-medium">{formError}</p>

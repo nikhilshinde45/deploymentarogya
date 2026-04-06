@@ -97,11 +97,4 @@ const allowAllRoles = async (req, res, next) => {
     }
 };
 
-module.exports = {
-    protect,
-    adminOnly,
-    patientOnly,
-    doctorOnly,
-    pharmacistOnly,
-    allowAllRoles,
-};
+module.exports = {protect,adminOnly,patientOnly,doctorOnly,pharmacistOnly,allowAllRoles};

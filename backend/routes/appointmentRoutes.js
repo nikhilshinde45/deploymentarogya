@@ -8,6 +8,8 @@ const {
     getPatientAppointments,
     getDoctorAppointments
 } = require('../controllers/appointmentController');
+
+
 const { protect, doctorOnly, patientOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -19,5 +21,6 @@ router.patch('/:appointmentId/cancel', protect, cancelAppointment);
 router.get('/upcoming', protect, getUpcomingAppointments);
 router.get('/patient', protect, patientOnly, getPatientAppointments);
 router.get('/doctor', protect, doctorOnly, getDoctorAppointments);
+
 
 module.exports = router;

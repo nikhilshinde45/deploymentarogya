@@ -6,6 +6,7 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const connectDB = require('./config/db');
 const initSocketHandler = require('./socketHandler');
+const { registerSwaggerDocs } = require('./config/openapi');
 
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -42,6 +43,8 @@ app.use((req, res, next) => {
 connectDB();
 
 // Routes
+registerSwaggerDocs(app);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/doctor', doctorAuthRoutes);

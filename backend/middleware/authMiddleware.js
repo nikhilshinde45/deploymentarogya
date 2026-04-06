@@ -79,13 +79,13 @@ const pharmacistOnly = async (req, res, next) => {
     }
 };
 
-const patientDoctorOrPharmacist = async (req, res, next) => {
-    const allowed = ['patient', 'doctor', 'pharmacist'];
+const allowAllRoles = async (req, res, next) => {
+    const allowed = ['patient', 'doctor', 'pharmacist', 'admin'];
     if (req.user && allowed.includes(req.user.role)) {
         next();
     } else {
         res.status(403).json({
-            message: 'Forbidden: Requires patient, doctor, or pharmacist access',
+            message: 'Forbidden: Requires valid role access',
         });
     }
 };
@@ -96,5 +96,5 @@ module.exports = {
     patientOnly,
     doctorOnly,
     pharmacistOnly,
-    patientDoctorOrPharmacist,
+    allowAllRoles,
 };

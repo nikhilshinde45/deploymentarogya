@@ -8,12 +8,12 @@ const {
 const {
   protect,
   pharmacistOnly,
-  patientDoctorOrPharmacist,
+  allowAllRoles,
 } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-router.get('/', protect, patientDoctorOrPharmacist, getMedicines);
+router.get('/', protect, allowAllRoles, getMedicines);
 router.post('/', protect, pharmacistOnly, createMedicine);
 router.put('/:id', protect, pharmacistOnly, updateMedicine);
 router.delete('/:id', protect, pharmacistOnly, deleteMedicine);

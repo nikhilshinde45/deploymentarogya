@@ -5,7 +5,7 @@ const cloudinary = require('../config/cloudinary');
 const storage = new CloudinaryStorage({
     cloudinary,
     params: {
-        folder: 'aarogyaai/doctors',
+        folder: 'aarogyaai/profiles',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
         transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
     },

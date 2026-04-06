@@ -254,4 +254,3 @@ const DashboardLayout = ({ active, children }) => {
 };
 
 export default DashboardLayout;
-

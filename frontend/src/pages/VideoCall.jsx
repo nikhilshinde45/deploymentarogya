@@ -14,12 +14,11 @@ const VideoCall = () => {
     const myVideoRef = useRef(null);
     const remoteVideoRef = useRef(null);
 
-    // Connection refs — persist across StrictMode double-mount
+    // Connection refs — persist across renders
     const peerRef = useRef(null);
     const socketRef = useRef(null);
     const localStreamRef = useRef(null);
     const currentCallRef = useRef(null);
-    const initRef = useRef(false); // Guard against double initialization
 
     // UI State
     const [status, setStatus] = useState('Initializing...');
@@ -43,24 +42,53 @@ const VideoCall = () => {
         return `${m}:${s}`;
     };
 
-    useEffect(() => {
-        // Guard: prevent double initialization in React StrictMode
-        if (initRef.current) {
-            console.log('[VideoCall] Already initialized, skipping duplicate mount');
-            return;
+    /** Safely attach a stream to a <video> element and play */
+    const attachStream = useCallback((videoEl, stream) => {
+        if (!videoEl || !stream) return;
+        videoEl.srcObject = stream;
+        // Browsers may block autoplay — catch and ignore
+        videoEl.play().catch(() => {});
+    }, []);
+
+    /** Full teardown of all resources */
+    const destroyAll = useCallback(() => {
+        console.log('[VideoCall] Destroying all resources...');
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
         }
-        initRef.current = true;
+        if (currentCallRef.current) {
+            try { currentCallRef.current.close(); } catch (_) {}
+            currentCallRef.current = null;
+        }
+        if (peerRef.current) {
+            try { if (!peerRef.current.destroyed) peerRef.current.destroy(); } catch (_) {}
+            peerRef.current = null;
+        }
+        if (socketRef.current) {
+            try { socketRef.current.disconnect(); } catch (_) {}
+            socketRef.current = null;
+        }
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            localStreamRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        // Always clean up anything from a previous mount first (handles StrictMode)
+        destroyAll();
 
         let cleanedUp = false;
 
         const init = async () => {
-            // ── Step 1: Acquire media stream ──
+            // ── Step 1: Acquire media stream (ONCE) ──
             console.log('[VideoCall] Step 1: Requesting camera/mic...');
             let stream;
             try {
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: true,
-                    audio: true
+                    audio: true,
                 });
 
                 if (cleanedUp) {
@@ -68,12 +96,13 @@ const VideoCall = () => {
                     return;
                 }
 
+                // Ensure all tracks are enabled
+                stream.getTracks().forEach((t) => { t.enabled = true; });
+
                 localStreamRef.current = stream;
                 setMediaReady(true);
-                if (myVideoRef.current) {
-                    myVideoRef.current.srcObject = stream;
-                }
-                console.log('[VideoCall] Step 1 ✓ Media acquired');
+                attachStream(myVideoRef.current, stream);
+                console.log('[VideoCall] Step 1 ✓ Media stream ready —', stream.getTracks().map(t => `${t.kind}:${t.readyState}`).join(', '));
             } catch (err) {
                 console.error('[VideoCall] Media access error:', err);
                 setStatus('Camera/microphone permission denied');
@@ -86,17 +115,54 @@ const VideoCall = () => {
                 config: {
                     iceServers: [
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                }
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                    ],
+                },
             });
             peerRef.current = peer;
+
+            // ── Handle incoming calls (register IMMEDIATELY on peer, not inside socket) ──
+            peer.on('call', (incomingCall) => {
+                if (cleanedUp) return;
+
+                const currentStream = localStreamRef.current;
+                if (!currentStream) {
+                    console.error('[VideoCall] No local stream to answer call');
+                    return;
+                }
+
+                console.log('[VideoCall] Incoming call — answering with local stream...');
+                currentCallRef.current = incomingCall;
+                incomingCall.answer(currentStream);
+
+                incomingCall.on('stream', (remoteStream) => {
+                    if (cleanedUp) return;
+                    console.log('[VideoCall] ✓ Stream received from incoming call');
+                    attachStream(remoteVideoRef.current, remoteStream);
+                    setStatus('Connected');
+                    setIsConnected(true);
+                    startTimer();
+                });
+
+                incomingCall.on('close', () => {
+                    console.log('[VideoCall] Incoming call closed');
+                    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+                    setStatus('Participant disconnected');
+                    setIsConnected(false);
+                });
+
+                incomingCall.on('error', (err) => {
+                    console.error('[VideoCall] Incoming call error:', err);
+                });
+            });
 
             // ── Step 3: Wait for peer to be ready, THEN connect socket ──
             peer.on('open', (peerId) => {
                 if (cleanedUp) return;
 
-                console.log(`[VideoCall] Step 2 ✓ Peer open with ID: ${peerId}`);
+                console.log(`[VideoCall] Step 2 ✓ Peer connected with ID: ${peerId}`);
                 setStatus('Connecting to room...');
 
                 // ── Step 3: Connect socket and join room ──
@@ -104,21 +170,22 @@ const VideoCall = () => {
                 const socket = io(SOCKET_URL, {
                     transports: ['websocket', 'polling'],
                     reconnection: true,
-                    reconnectionAttempts: 5,
+                    reconnectionAttempts: 10,
                     reconnectionDelay: 1000,
+                    forceNew: true,
                 });
                 socketRef.current = socket;
 
                 socket.on('connect', () => {
                     if (cleanedUp) return;
                     console.log(`[VideoCall] Step 3 ✓ Socket connected: ${socket.id}`);
-                    console.log(`[VideoCall] Step 4: Joining room ${roomId} with peerId ${peerId}`);
+                    console.log(`[VideoCall] Joining room ${roomId} with peerId ${peerId}`);
                     socket.emit('join-room', { roomId, peerId });
                     setStatus('Waiting for other participant...');
                 });
 
                 socket.on('connect_error', (err) => {
-                    console.error('[VideoCall] Socket connect error:', err.message);
+                    console.error('[VideoCall] Socket connection error:', err.message);
                     setStatus('Connection error — retrying...');
                 });
 
@@ -130,87 +197,50 @@ const VideoCall = () => {
                     }
                 });
 
-                socket.on('reconnect', () => {
-                    console.log('[VideoCall] Socket reconnected, re-joining room...');
-                    socket.emit('join-room', { roomId, peerId });
-                });
-
                 // ── When another user connects to room, CALL them ──
                 socket.on('user-connected', (remotePeerId) => {
                     if (cleanedUp) return;
-                    console.log(`[VideoCall] Step 5: User connected with peer ID: ${remotePeerId}`);
+                    console.log(`[VideoCall] User connected: ${remotePeerId}`);
                     setStatus('Connecting to participant...');
 
                     const currentStream = localStreamRef.current;
                     if (!currentStream) {
-                        console.error('[VideoCall] No local stream available to make call');
+                        console.error('[VideoCall] No local stream to make outgoing call');
                         return;
                     }
 
-                    console.log(`[VideoCall] Step 6: Calling peer ${remotePeerId}...`);
-                    const call = peer.call(remotePeerId, currentStream);
-                    if (!call) {
-                        console.error('[VideoCall] peer.call() returned null');
-                        return;
-                    }
-                    currentCallRef.current = call;
+                    // Small delay to let remote peer fully set up their call handler
+                    setTimeout(() => {
+                        if (cleanedUp) return;
 
-                    call.on('stream', (remoteStream) => {
-                        console.log('[VideoCall] Step 7 ✓ Remote stream received (outgoing call)');
-                        if (remoteVideoRef.current) {
-                            remoteVideoRef.current.srcObject = remoteStream;
+                        console.log(`[VideoCall] Call initiated to peer ${remotePeerId}`);
+                        const call = peer.call(remotePeerId, currentStream);
+                        if (!call) {
+                            console.error('[VideoCall] peer.call() returned null');
+                            return;
                         }
-                        setStatus('Connected');
-                        setIsConnected(true);
-                        startTimer();
-                    });
+                        currentCallRef.current = call;
 
-                    call.on('close', () => {
-                        console.log('[VideoCall] Outgoing call closed');
-                        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-                        setStatus('Participant disconnected');
-                        setIsConnected(false);
-                    });
+                        call.on('stream', (remoteStream) => {
+                            if (cleanedUp) return;
+                            console.log('[VideoCall] ✓ Stream received from outgoing call');
+                            attachStream(remoteVideoRef.current, remoteStream);
+                            setStatus('Connected');
+                            setIsConnected(true);
+                            startTimer();
+                        });
 
-                    call.on('error', (err) => {
-                        console.error('[VideoCall] Call error:', err);
-                    });
-                });
+                        call.on('close', () => {
+                            console.log('[VideoCall] Outgoing call closed');
+                            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+                            setStatus('Participant disconnected');
+                            setIsConnected(false);
+                        });
 
-                // ── When someone CALLS us, answer ──
-                peer.on('call', (incomingCall) => {
-                    if (cleanedUp) return;
-
-                    const currentStream = localStreamRef.current;
-                    if (!currentStream) {
-                        console.error('[VideoCall] No local stream available to answer call');
-                        return;
-                    }
-
-                    console.log('[VideoCall] Incoming call — answering...');
-                    currentCallRef.current = incomingCall;
-                    incomingCall.answer(currentStream);
-
-                    incomingCall.on('stream', (remoteStream) => {
-                        console.log('[VideoCall] Step 7 ✓ Remote stream received (incoming call)');
-                        if (remoteVideoRef.current) {
-                            remoteVideoRef.current.srcObject = remoteStream;
-                        }
-                        setStatus('Connected');
-                        setIsConnected(true);
-                        startTimer();
-                    });
-
-                    incomingCall.on('close', () => {
-                        console.log('[VideoCall] Incoming call closed');
-                        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-                        setStatus('Participant disconnected');
-                        setIsConnected(false);
-                    });
-
-                    incomingCall.on('error', (err) => {
-                        console.error('[VideoCall] Incoming call error:', err);
-                    });
+                        call.on('error', (err) => {
+                            console.error('[VideoCall] Outgoing call error:', err);
+                        });
+                    }, 500);
                 });
 
                 // ── Handle remote user disconnect ──
@@ -229,7 +259,7 @@ const VideoCall = () => {
             });
 
             peer.on('error', (err) => {
-                console.error('[VideoCall] Peer error:', err);
+                console.error('[VideoCall] Peer error:', err.type, err);
                 if (!cleanedUp) {
                     setStatus('Connection error — please try again');
                 }
@@ -245,64 +275,47 @@ const VideoCall = () => {
 
         init();
 
-        // ── Cleanup: only runs on TRUE unmount ──
+        // ── Cleanup ──
         return () => {
             console.log('[VideoCall] Cleanup running...');
             cleanedUp = true;
-            // Don't reset initRef here — StrictMode cleanup should NOT
-            // allow re-init on the immediate re-mount
-
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-                timerRef.current = null;
-            }
-            if (currentCallRef.current) {
-                currentCallRef.current.close();
-                currentCallRef.current = null;
-            }
-            if (peerRef.current && !peerRef.current.destroyed) {
-                peerRef.current.destroy();
-                peerRef.current = null;
-            }
-            if (socketRef.current) {
-                socketRef.current.disconnect();
-                socketRef.current = null;
-            }
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach((track) => track.stop());
-                localStreamRef.current = null;
-            }
+            destroyAll();
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [roomId]);
 
+    // Ensure local video stays attached after re-renders
+    useEffect(() => {
+        if (localStreamRef.current && myVideoRef.current && !myVideoRef.current.srcObject) {
+            attachStream(myVideoRef.current, localStreamRef.current);
+        }
+    });
+
     const toggleMute = () => {
-        if (!localStreamRef.current) return;
-        const audioTrack = localStreamRef.current.getAudioTracks()[0];
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const audioTrack = stream.getAudioTracks()[0];
         if (audioTrack) {
             audioTrack.enabled = !audioTrack.enabled;
             setIsMuted(!audioTrack.enabled);
+            console.log(`[VideoCall] Mic ${audioTrack.enabled ? 'ON' : 'OFF'}`);
         }
     };
 
     const toggleVideo = () => {
-        if (!localStreamRef.current) return;
-        const videoTrack = localStreamRef.current.getVideoTracks()[0];
+        const stream = localStreamRef.current;
+        if (!stream) return;
+        const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack) {
             videoTrack.enabled = !videoTrack.enabled;
             setIsVideoOff(!videoTrack.enabled);
+            console.log(`[VideoCall] Camera ${videoTrack.enabled ? 'ON' : 'OFF'}`);
         }
     };
 
     const endCall = () => {
         console.log('[VideoCall] User ended call');
-        if (currentCallRef.current) currentCallRef.current.close();
-        if (peerRef.current && !peerRef.current.destroyed) peerRef.current.destroy();
-        if (socketRef.current) socketRef.current.disconnect();
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach((track) => track.stop());
-        }
-        initRef.current = false; // Allow re-init if user navigates back
+        destroyAll();
         navigate(-1);
     };
 
@@ -321,7 +334,7 @@ const VideoCall = () => {
                     <p className="text-sm text-gray-500 mt-0.5">Room: <span className="font-mono text-gray-700">{roomId}</span></p>
                     <div className="flex items-center gap-3 mt-1">
                         <div className="flex items-center gap-1.5">
-                            {isConnected 
+                            {isConnected
                                 ? <Wifi className="w-3.5 h-3.5 text-emerald-500" />
                                 : <WifiOff className="w-3.5 h-3.5 text-gray-400" />
                             }

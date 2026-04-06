@@ -62,7 +62,7 @@ const Medicines = () => {
       setRows(res.data.data || []);
     } catch (err) {
       const msg = err?.response?.data?.message || 'Unable to load medicines.';
-      setError(`${msg} Sign in as patient, doctor, or pharmacist.`);
+      setError(msg);
       setRows([]);
     } finally {
       setLoading(false);

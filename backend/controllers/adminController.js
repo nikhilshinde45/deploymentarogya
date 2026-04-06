@@ -1,6 +1,7 @@
 const Admin = require('../models/Admin');
 const DoctorProfile = require('../models/DoctorProfile');
 const User = require('../models/User');
+const Pharmacist = require('../models/Pharmacist');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT
@@ -37,6 +38,10 @@ const loginAdmin = async (req, res) => {
     }
 };
 
+// ══════════════════════════════════════════════
+//  DOCTOR MANAGEMENT
+// ══════════════════════════════════════════════
+
 // @desc    Add a new doctor
 // @route   POST /api/admin/doctors
 // @access  Private/Admin
@@ -56,8 +61,9 @@ const addDoctor = async (req, res) => {
         const userExists = await User.findOne({ email });
         const doctorExists = await DoctorProfile.findOne({ email });
         const adminExists = await Admin.findOne({ email });
+        const pharmacistExists = await Pharmacist.findOne({ email });
 
-        if (userExists || doctorExists || adminExists) {
+        if (userExists || doctorExists || adminExists || pharmacistExists) {
             return res.status(400).json({ success: false, message: 'Email already exists in the system' });
         }
 
@@ -101,10 +107,6 @@ const updateDoctor = async (req, res) => {
         const updates = { ...req.body };
 
         // Never allow admin to update email or password
-        // - Email is the doctor's login identity and must not change
-        // - Password cannot be updated via findByIdAndUpdate because the
-        //   pre('save') hook that hashes passwords does NOT run on update queries,
-        //   which would store it in plain text and break login (401 error)
         delete updates.email;
         delete updates.password;
 
@@ -151,9 +153,141 @@ const deleteDoctor = async (req, res) => {
     }
 };
 
+// ══════════════════════════════════════════════
+//  PHARMACIST MANAGEMENT
+// ══════════════════════════════════════════════
+
+// @desc    Get all pharmacists
+// @route   GET /api/admin/pharmacists
+// @access  Private/Admin
+const getPharmacists = async (req, res) => {
+    try {
+        const pharmacists = await Pharmacist.find({}).select('-password').sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: pharmacists });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Add a new pharmacist
+// @route   POST /api/admin/pharmacists
+// @access  Private/Admin
+const addPharmacist = async (req, res) => {
+    try {
+        const { name, email, password, licenseNumber, experience, phone, address } = req.body;
+
+        if (!name || !email || !password || !licenseNumber) {
+            return res.status(400).json({ success: false, message: 'Please provide all required fields (name, email, password, licenseNumber)' });
+        }
+
+        // Check uniqueness across all collections
+        const userExists = await User.findOne({ email });
+        const doctorExists = await DoctorProfile.findOne({ email });
+        const adminExists = await Admin.findOne({ email });
+        const pharmacistExists = await Pharmacist.findOne({ email });
+
+        if (userExists || doctorExists || adminExists || pharmacistExists) {
+            return res.status(400).json({ success: false, message: 'Email already exists in the system' });
+        }
+
+        const pharmacistData = {
+            name,
+            email,
+            password,
+            licenseNumber,
+            experience: experience ? Number(experience) : undefined,
+            phone,
+            address,
+        };
+
+        if (req.file) {
+            pharmacistData.profileImage = req.file.path;
+        }
+
+        const pharmacist = await Pharmacist.create(pharmacistData);
+
+        const pharmacistResponse = {
+            _id: pharmacist._id,
+            pharmacistId: pharmacist.pharmacistId,
+            name: pharmacist.name,
+            email: pharmacist.email,
+            role: pharmacist.role,
+            licenseNumber: pharmacist.licenseNumber,
+            experience: pharmacist.experience,
+            phone: pharmacist.phone,
+            address: pharmacist.address,
+            profileImage: pharmacist.profileImage,
+            createdAt: pharmacist.createdAt,
+        };
+
+        res.status(201).json({ success: true, data: pharmacistResponse });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Update pharmacist
+// @route   PUT /api/admin/pharmacists/:id
+// @access  Private/Admin
+const updatePharmacist = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = { ...req.body };
+
+        // Never allow admin to update email or password
+        delete updates.email;
+        delete updates.password;
+
+        if (req.file) {
+            updates.profileImage = req.file.path;
+        }
+
+        if (typeof updates.profileImage === 'string' && !req.file) {
+            delete updates.profileImage;
+        }
+
+        const pharmacist = await Pharmacist.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select('-password');
+
+        if (!pharmacist) {
+            return res.status(404).json({ success: false, message: 'Pharmacist not found' });
+        }
+
+        res.status(200).json({ success: true, data: pharmacist });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
+// @desc    Delete pharmacist
+// @route   DELETE /api/admin/pharmacists/:id
+// @access  Private/Admin
+const deletePharmacist = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const pharmacist = await Pharmacist.findByIdAndDelete(id);
+
+        if (!pharmacist) {
+            return res.status(404).json({ success: false, message: 'Pharmacist not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Pharmacist deleted successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     loginAdmin,
     addDoctor,
     updateDoctor,
-    deleteDoctor
+    deleteDoctor,
+    getPharmacists,
+    addPharmacist,
+    updatePharmacist,
+    deletePharmacist,
 };

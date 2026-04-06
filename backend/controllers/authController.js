@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const DoctorProfile = require('../models/DoctorProfile');
 const Admin = require('../models/Admin');
+const Pharmacist = require('../models/Pharmacist');
 const jwt = require('jsonwebtoken');
 
 // Generate JWT
@@ -22,15 +23,16 @@ const registerUser = async (req, res) => {
         }
 
         if (role !== 'patient') {
-            return res.status(400).json({ message: 'Only patients can register here' });
+            return res.status(400).json({ message: 'Only patients can register here. Pharmacists are added by admin.' });
         }
 
         // Check if email exists across all collections
         const userExists = await User.findOne({ email });
         const doctorExists = await DoctorProfile.findOne({ email });
         const adminExists = await Admin.findOne({ email });
+        const pharmacistExists = await Pharmacist.findOne({ email });
 
-        if (userExists || doctorExists || adminExists) {
+        if (userExists || doctorExists || adminExists || pharmacistExists) {
             return res.status(400).json({ message: 'Email already exists' });
         }
 

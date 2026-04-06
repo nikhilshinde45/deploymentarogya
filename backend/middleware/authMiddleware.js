@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Admin = require('../models/Admin');
 const DoctorProfile = require('../models/DoctorProfile');
+const Pharmacist = require('../models/Pharmacist');
 
 const protect = async (req, res, next) => {
     let token;
@@ -24,6 +25,12 @@ const protect = async (req, res, next) => {
                 currentUser = await Admin.findById(decoded.id).select('-password');
             } else if (decoded.role === 'doctor') {
                 currentUser = await DoctorProfile.findById(decoded.id).select('-password');
+            } else if (decoded.role === 'pharmacist') {
+                // Check new Pharmacist model first, fallback to legacy User model
+                currentUser = await Pharmacist.findById(decoded.id).select('-password');
+                if (!currentUser) {
+                    currentUser = await User.findById(decoded.id).select('-password');
+                }
             } else {
                 currentUser = await User.findById(decoded.id).select('-password');
             }

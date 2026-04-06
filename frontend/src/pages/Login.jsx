@@ -14,7 +14,7 @@ const getLoginEndpoint = (role) => {
   switch (role) {
     case 'doctor': return '/api/doctor/login';
     case 'admin': return '/api/admin/login';
-    case 'pharmacist': return '/api/auth/login';
+    case 'pharmacist': return '/api/pharmacist/login';
     case 'patient':
     default: return '/api/auth/login';
   }

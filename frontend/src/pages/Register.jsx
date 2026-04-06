@@ -9,7 +9,6 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: ''
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -37,7 +36,7 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: formData.role
+        role: 'patient'
       });
 
       localStorage.setItem('userInfo', JSON.stringify(response.data));
@@ -96,23 +95,6 @@ const Register = () => {
               />
             </div>
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                required
-                value={formData.role}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 hover:border-blue-400 cursor-pointer appearance-none bg-white"
-              >
-                <option value="">Select your role</option>
-                <option value="patient">Patient</option>
-                <option value="pharmacist">Pharmacist</option>
-              </select>
-            </div>
-            <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
@@ -150,7 +132,7 @@ const Register = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? 'Creating account...' : 'Create Patient Account'}
             </button>
           </div>
         </form>

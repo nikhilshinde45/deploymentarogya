@@ -19,7 +19,7 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             let currentUser;
-            
+
             // Get user from the correct collection based on role
             if (decoded.role === 'admin') {
                 currentUser = await Admin.findById(decoded.id).select('-password');
@@ -97,4 +97,4 @@ const allowAllRoles = async (req, res, next) => {
     }
 };
 
-module.exports = {protect,adminOnly,patientOnly,doctorOnly,pharmacistOnly,allowAllRoles};
+module.exports = { protect, adminOnly, patientOnly, doctorOnly, pharmacistOnly, allowAllRoles };

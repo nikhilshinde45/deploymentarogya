@@ -178,7 +178,7 @@ const PatientDashboard = () => {
                 const apptRes = await axios.get('/api/appointments/patient', { headers: authHeaders });
                 setUpcomingAppointments(apptRes.data.upcomingAppointments || []);
                 setPastAppointments(apptRes.data.pastAppointments || []);
-            } catch {}
+            } catch { }
         }, 60000);
         return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -493,15 +493,15 @@ const PatientDashboard = () => {
                                                         src={appt.doctor.profileImage}
                                                         alt={appt.doctor.name}
                                                         className={`w-10 h-10 rounded-full object-cover shrink-0 ring-2 ${appt.status === 'completed' ? 'ring-emerald-100' :
-                                                                effectiveStatus === 'missed' ? 'ring-orange-100' :
-                                                                    appt.status === 'cancelled' ? 'ring-red-100' : 'ring-gray-100'
+                                                            effectiveStatus === 'missed' ? 'ring-orange-100' :
+                                                                appt.status === 'cancelled' ? 'ring-red-100' : 'ring-gray-100'
                                                             }`}
                                                     />
                                                 ) : (
                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                            effectiveStatus === 'missed' ? 'bg-orange-100 text-orange-700' :
-                                                                appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-gray-100 text-gray-700'
+                                                        effectiveStatus === 'missed' ? 'bg-orange-100 text-orange-700' :
+                                                            appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                                'bg-gray-100 text-gray-700'
                                                         }`}>
                                                         {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
                                                     </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
     CalendarDays, Loader2, Pill, ShieldCheck, Clock3, Video,
-    CheckCircle2, FileText, X, AlertCircle, Stethoscope, User, VideoOff, Clock
+    CheckCircle2, FileText, X, AlertCircle, Stethoscope, User, VideoOff, Clock, MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -56,6 +56,14 @@ const getDisplayStatus = (appt) => {
         return 'ongoing';
     }
     return appt.status;
+};
+
+/** Mode badge helper */
+const modeBadge = (mode) => {
+    if (mode === 'offline') {
+        return { label: 'In-Person', bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', icon: MapPin };
+    }
+    return { label: 'Online', bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', icon: Video };
 };
 
 const useCountUp = (end, duration = 1500) => {
@@ -159,6 +167,20 @@ const PatientDashboard = () => {
             }
         };
         load();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [role]);
+
+    // Auto-refresh every 60s so expired appointments move to Past section
+    useEffect(() => {
+        if (role !== 'patient') return;
+        const interval = setInterval(async () => {
+            try {
+                const apptRes = await axios.get('/api/appointments/patient', { headers: authHeaders });
+                setUpcomingAppointments(apptRes.data.upcomingAppointments || []);
+                setPastAppointments(apptRes.data.pastAppointments || []);
+            } catch {}
+        }, 60000);
+        return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [role]);
 
@@ -377,12 +399,22 @@ const PatientDashboard = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${badge.bg} ${badge.text} ${badge.border}`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
                                                 {(() => {
+                                                    const mb = modeBadge(appt.mode);
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${mb.bg} ${mb.text} ${mb.border}`}>
+                                                            <mb.icon className="w-3 h-3" />
+                                                            {mb.label}
+                                                        </span>
+                                                    );
+                                                })()}
+                                                {/* Video call buttons — only for online appointments */}
+                                                {(appt.mode !== 'offline') && (() => {
                                                     const callStatus = getCallStatus(appt);
                                                     if (callStatus === 'after') {
                                                         return (
@@ -495,6 +527,15 @@ const PatientDashboard = () => {
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
+                                                {(() => {
+                                                    const mb = modeBadge(appt.mode);
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border ${mb.bg} ${mb.text} ${mb.border}`}>
+                                                            <mb.icon className="w-3 h-3" />
+                                                            {mb.label}
+                                                        </span>
+                                                    );
+                                                })()}
                                                 {hasRecord && (
                                                     <button
                                                         onClick={() => handleViewRecord(appt)}

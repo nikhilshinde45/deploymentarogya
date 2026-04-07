@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
     CalendarDays, Loader2, Stethoscope, Video, Clock, Plus, History,
-    Users, CheckCircle2, FileText, Edit3, X, AlertCircle, Eye, VideoOff, FolderClock
+    Users, CheckCircle2, FileText, Edit3, X, AlertCircle, Eye, VideoOff, FolderClock, MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -59,6 +59,22 @@ const getDisplayStatus = (appt) => {
     return appt.status;
 };
 
+/** Check if record can be added (from startTime, not endTime) */
+const canAddRecord = (appt) => {
+    if (appt.status === 'cancelled') return false;
+    const now = new Date();
+    const start = new Date(`${appt.date}T${appt.startTime}`);
+    return now >= start;
+};
+
+/** Mode badge helper */
+const modeBadge = (mode) => {
+    if (mode === 'offline') {
+        return { label: 'In-Person', bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', icon: MapPin };
+    }
+    return { label: 'Online', bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', icon: Video };
+};
+
 const DoctorDashboard = () => {
     const navigate = useNavigate();
     const { pushToast } = useToast();
@@ -112,6 +128,16 @@ const DoctorDashboard = () => {
 
     useEffect(() => {
         loadDashboard();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [role]);
+
+    // Auto-refresh every 60s so expired appointments move to Past section
+    useEffect(() => {
+        if (role !== 'doctor') return;
+        const interval = setInterval(() => {
+            loadDashboard();
+        }, 60000);
+        return () => clearInterval(interval);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [role]);
 
@@ -328,11 +354,20 @@ const DoctorDashboard = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
+                                            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border ${badge.bg} ${badge.text} ${badge.border}`}>
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
+                                                {(() => {
+                                                    const mb = modeBadge(appt.mode);
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border ${mb.bg} ${mb.text} ${mb.border}`}>
+                                                            <mb.icon className="w-3 h-3" />
+                                                            {mb.label}
+                                                        </span>
+                                                    );
+                                                })()}
                                                 {appt.patient?._id && (
                                                     <button
                                                         onClick={() => navigate(`/doctor/patient-history/${appt.patient._id}`)}
@@ -342,7 +377,8 @@ const DoctorDashboard = () => {
                                                         Patient History
                                                     </button>
                                                 )}
-                                                {(() => {
+                                                {/* Video call buttons — only for online appointments */}
+                                                {(appt.mode !== 'offline') && (() => {
                                                     const callStatus = getCallStatus(appt);
                                                     if (callStatus === 'after') {
                                                         return (
@@ -375,6 +411,25 @@ const DoctorDashboard = () => {
                                                         >
                                                             <Video className="w-4 h-4" />
                                                             Start Call
+                                                        </button>
+                                                    );
+                                                })()}
+                                                {/* Record button for ongoing appointments (from startTime) */}
+                                                {canAddRecord(appt) && (() => {
+                                                    const hasRecord = !!appt.medicalRecord;
+                                                    return (
+                                                        <button
+                                                            onClick={() => openWriteRecordModal(appt)}
+                                                            className={`px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-1.5 hover:shadow-md active:scale-[0.97] ${hasRecord
+                                                                ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                                                                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-sm'
+                                                            }`}
+                                                        >
+                                                            {hasRecord ? (
+                                                                <><Edit3 className="w-3.5 h-3.5" /> Edit Record</>
+                                                            ) : (
+                                                                <><Plus className="w-3.5 h-3.5" /> Add Record</>
+                                                            )}
                                                         </button>
                                                     );
                                                 })()}
@@ -443,21 +498,32 @@ const DoctorDashboard = () => {
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
+                                                {(() => {
+                                                    const mb = modeBadge(appt.mode);
+                                                    return (
+                                                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border ${mb.bg} ${mb.text} ${mb.border}`}>
+                                                            <mb.icon className="w-3 h-3" />
+                                                            {mb.label}
+                                                        </span>
+                                                    );
+                                                })()}
                                                 {hasRecord && (
                                                     <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium bg-violet-50 text-violet-600 border border-violet-200">
                                                         <FileText className="w-3 h-3" />
                                                         Record
                                                     </span>
                                                 )}
-                                                {/* Disabled Start Call button for past */}
-                                                <button
-                                                    disabled
-                                                    className="px-3 py-1.5 bg-gray-200 text-gray-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 opacity-50 cursor-not-allowed"
-                                                    title="Video call not available for past appointments"
-                                                >
-                                                    <VideoOff className="w-3.5 h-3.5" />
-                                                    Call Ended
-                                                </button>
+                                                {/* Disabled call button only for online past appointments */}
+                                                {appt.mode !== 'offline' && (
+                                                    <button
+                                                        disabled
+                                                        className="px-3 py-1.5 bg-gray-200 text-gray-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 opacity-50 cursor-not-allowed"
+                                                        title="Video call not available for past appointments"
+                                                    >
+                                                        <VideoOff className="w-3.5 h-3.5" />
+                                                        Call Ended
+                                                    </button>
+                                                )}
                                                 {canWriteRecord && (
                                                     <button
                                                         onClick={() => openWriteRecordModal(appt)}

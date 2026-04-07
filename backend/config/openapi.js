@@ -1,5 +1,7 @@
 const swaggerUi = require('swagger-ui-express');
 
+const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
+
 const openApiSpec = {
     openapi: '3.0.3',
     info: {
@@ -9,7 +11,7 @@ const openApiSpec = {
     },
     servers: [
         {
-            url: 'http://localhost:5000',
+            url: apiBaseUrl,
             description: 'Local development server'
         }
     ],
@@ -473,7 +475,11 @@ const openApiSpec = {
 };
 
 const registerSwaggerDocs = (app) => {
-    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, { explorer: true }));
+    const swaggerSetup = swaggerUi.setup(openApiSpec, { explorer: true });
+
+    app.use('/api/docs', swaggerUi.serve);
+    app.get('/api/docs', swaggerSetup);
+    app.get('/api/docs/', swaggerSetup);
 
     app.get('/api/openapi.json', (req, res) => {
         res.setHeader('Content-Type', 'application/json');

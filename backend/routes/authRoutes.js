@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../controllers/authController');
+const validate = require('../middleware/validate');
+const { registerUserSchema, loginSchema } = require('../validation/schemas');
 
-// router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/login', validate(loginSchema), loginUser);
 
-
-router.post('/register', (req, res, next) => {
-    console.log("🔥 REGISTER ROUTE HIT");
-    next();
-}, registerUser);
+router.post('/register', validate(registerUserSchema), registerUser);
 
 module.exports = router;

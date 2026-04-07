@@ -17,6 +17,7 @@ const medicalRecordRoutes = require('./routes/medicalRecordRoutes');
 const medicineRoutes = require('./routes/medicineRoutes');
 const recordsRoutes = require('./routes/recordsRoutes');
 const pharmacistAuthRoutes = require('./routes/pharmacistAuthRoutes');
+const healthAssistantRoutes = require('./routes/healthAssistantRoutes');
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -54,6 +55,7 @@ app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/medicines', medicineRoutes);
 app.use('/api/records', recordsRoutes);
 app.use('/api/pharmacist', pharmacistAuthRoutes);
+app.use('/api/health-assistant', healthAssistantRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

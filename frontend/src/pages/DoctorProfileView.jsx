@@ -16,6 +16,7 @@ const DoctorProfileView = () => {
     const [slotMessage, setSlotMessage] = useState('');
     const [selectedSlot, setSelectedSlot] = useState(null);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [appointmentMode, setAppointmentMode] = useState('online');
     const { pushToast } = useToast();
 
     const today = new Date().toISOString().slice(0, 10);
@@ -120,7 +121,7 @@ const DoctorProfileView = () => {
 
             const response = await axios.post(
                 '/api/appointments/book',
-                { slotId },
+                { slotId, mode: appointmentMode },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -341,6 +342,68 @@ const DoctorProfileView = () => {
                                                 <p className="mt-2 text-base text-slate-900">{`${selectedSlot.startTime} - ${selectedSlot.endTime}`}</p>
                                             </div>
                                         </div>
+
+                                        {/* Appointment Mode Selector */}
+                                        <div className="rounded-3xl bg-slate-50 p-4 border border-slate-100">
+                                            <p className="text-xs uppercase tracking-[0.22em] text-slate-400 font-bold mb-3">Consultation Type</p>
+                                            <div className="flex gap-3">
+                                                <label
+                                                    className={`flex-1 flex items-center gap-2.5 p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                                                        appointmentMode === 'online'
+                                                            ? 'border-sky-400 bg-sky-50 shadow-sm shadow-sky-100'
+                                                            : 'border-slate-200 bg-white hover:border-slate-300'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="appointmentMode"
+                                                        value="online"
+                                                        checked={appointmentMode === 'online'}
+                                                        onChange={() => setAppointmentMode('online')}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                                        appointmentMode === 'online' ? 'border-sky-500 bg-sky-500' : 'border-slate-300'
+                                                    }`}>
+                                                        {appointmentMode === 'online' && (
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className={`text-sm font-semibold ${appointmentMode === 'online' ? 'text-sky-700' : 'text-slate-600'}`}>Online</p>
+                                                        <p className="text-xs text-slate-400">Video consultation</p>
+                                                    </div>
+                                                </label>
+                                                <label
+                                                    className={`flex-1 flex items-center gap-2.5 p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                                                        appointmentMode === 'offline'
+                                                            ? 'border-violet-400 bg-violet-50 shadow-sm shadow-violet-100'
+                                                            : 'border-slate-200 bg-white hover:border-slate-300'
+                                                    }`}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name="appointmentMode"
+                                                        value="offline"
+                                                        checked={appointmentMode === 'offline'}
+                                                        onChange={() => setAppointmentMode('offline')}
+                                                        className="sr-only"
+                                                    />
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                                        appointmentMode === 'offline' ? 'border-violet-500 bg-violet-500' : 'border-slate-300'
+                                                    }`}>
+                                                        {appointmentMode === 'offline' && (
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className={`text-sm font-semibold ${appointmentMode === 'offline' ? 'text-violet-700' : 'text-slate-600'}`}>Offline</p>
+                                                        <p className="text-xs text-slate-400">In-person visit</p>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
                                         <p className="text-sm text-slate-600 leading-relaxed">
                                             Are you sure you want to book this appointment?
                                         </p>

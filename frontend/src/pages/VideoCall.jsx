@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { JitsiMeeting } from '@jitsi/react-sdk';
 import { ArrowLeft, Video, Loader2 } from 'lucide-react';
+import axios from 'axios';
 
 const VideoCall = () => {
     const { roomId } = useParams();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(true);
+    const hasCompleted = useRef(false);
 
     // Get user info from localStorage (same pattern used throughout the app)
     const userInfo = useMemo(() => {
@@ -18,21 +20,48 @@ const VideoCall = () => {
     }, []);
 
     const displayName = userInfo.name || userInfo.username || 'Participant';
+    const token = userInfo?.token || '';
+
+    /** Mark appointment as completed when call ends */
+    const markAppointmentCompleted = useCallback(async () => {
+        if (hasCompleted.current || !token) return;
+        hasCompleted.current = true;
+        try {
+            // Find the appointment by meetingId (roomId)
+            const headers = { Authorization: `Bearer ${token}` };
+            const role = userInfo?.role;
+            const endpoint = role === 'doctor' ? '/api/appointments/doctor' : '/api/appointments/patient';
+            const res = await axios.get(endpoint, { headers });
+            const allAppts = [
+                ...(res.data.upcomingAppointments || []),
+                ...(res.data.pastAppointments || [])
+            ];
+            const appt = allAppts.find(a => a.meetingId === roomId);
+            if (appt && appt.status === 'confirmed') {
+                await axios.patch(`/api/appointments/${appt._id}/complete`, {}, { headers });
+            }
+        } catch (err) {
+            console.error('Failed to mark appointment completed:', err);
+        }
+    }, [token, userInfo?.role, roomId]);
 
     const handleApiReady = (externalApi) => {
         setIsLoading(false);
 
         // Listen for the participant leaving / hangup
         externalApi.on('readyToClose', () => {
+            markAppointmentCompleted();
             navigate(-1);
         });
 
         externalApi.on('videoConferenceLeft', () => {
+            markAppointmentCompleted();
             navigate(-1);
         });
     };
 
     const handleReadyToClose = () => {
+        markAppointmentCompleted();
         navigate(-1);
     };
 

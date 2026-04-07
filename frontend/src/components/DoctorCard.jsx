@@ -1,8 +1,10 @@
 import React from 'react';
 import { User, Stethoscope, Clock, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const DoctorCard = ({ doctor }) => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
 
     return (
@@ -31,14 +33,14 @@ const DoctorCard = ({ doctor }) => {
                             </p>
                             <p className="flex items-center text-gray-500 text-sm font-medium">
                                 <Clock className="w-4 h-4 mr-2 text-gray-400" />
-                                {doctor.experience} Years Experience
+                                {doctor.experience} {t('doctorCard.yearsExperience')}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
             <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between group-hover:bg-blue-50/30 transition-colors">
-                <span className="text-sm font-medium text-blue-600">View Full Profile</span>
+                <span className="text-sm font-medium text-blue-600">{t('doctorCard.viewProfile')}</span>
                 <ChevronRight className="w-5 h-5 text-blue-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-transform" />
             </div>
         </div>

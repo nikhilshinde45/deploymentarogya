@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Link, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Link, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -13,9 +13,11 @@ import AdminDashboard from './pages/AdminDashboard';
 import DoctorRecordView from './pages/DoctorRecordView';
 import PatientHistoryPage from './pages/PatientHistoryPage';
 import PatientHealthAssistantPlaceholder from './components/PatientHealthAssistantPlaceholder';
-import { useMemo } from 'react';
-import { LogOut, Mail, Phone, MapPin, ChevronRight, Globe } from 'lucide-react';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { LogOut, Mail, Phone, MapPin, ChevronRight, Globe, User, Settings } from 'lucide-react';
 import { useToast } from './hooks/useToast';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from './components/LanguageSelector';
 
 const getUserInfo = () => {
   try {
@@ -26,35 +28,51 @@ const getUserInfo = () => {
 };
 
 const AppContent = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { pushToast } = useToast();
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const userInfo = getUserInfo();
 
   const role = userInfo?.role || '';
+  const name = userInfo?.name || 'User';
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const navItems = useMemo(() => {
-    if (role === 'patient') return [{ label: 'Patient Dashboard', to: '/patient-dashboard' }];
+    if (role === 'patient') return [{ label: t('navItems.patientDashboard'), to: '/patient-dashboard' }];
     if (role === 'doctor') return [
-      { label: 'Doctor Dashboard', to: '/doctor-dashboard' },
-      { label: 'Manage Slots', to: '/doctor/slots' }
+      { label: t('navItems.doctorDashboard'), to: '/doctor-dashboard' },
+      { label: t('navItems.manageSlots'), to: '/doctor/slots' }
     ];
-    if (role === 'admin') return [{ label: 'Admin Dashboard', to: '/admin-dashboard' }];
-    if (role === 'pharmacist') return [{ label: 'Pharmacist Dashboard', to: '/pharmacist-dashboard' }];
+    if (role === 'admin') return [{ label: t('navItems.adminDashboard'), to: '/admin-dashboard' }];
+    if (role === 'pharmacist') return [{ label: t('navItems.pharmacistDashboard'), to: '/pharmacist-dashboard' }];
     return [];
-  }, [role]);
+  }, [role, t]);
 
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
     pushToast('Logged out successfully', 'success');
+    setIsProfileDropdownOpen(false);
     navigate('/');
   };
 
   return (
       <div className="min-h-screen flex flex-col font-sans bg-gradient-to-br from-slate-50 via-blue-50/40 to-cyan-50/40">
         {/* Simple Navbar */}
-        <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between min-h-16 py-3 items-center gap-3">
+        <nav className="bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 shadow-sm border-b border-gray-200 sticky top-0 z-[60] h-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+            <div className="flex justify-between h-full items-center gap-3">
               <Link to="/" className="flex items-center cursor-pointer group">
                 <div className="w-8 h-8 rounded-lg bg-blue-600 group-hover:bg-blue-700 transition-colors flex items-center justify-center text-white font-bold text-xl mr-3 shadow-md group-hover:shadow-lg transform group-hover:scale-105 duration-200">H</div>
                 <span className="text-2xl font-extrabold text-gray-900 tracking-tight group-hover:text-blue-900 transition-colors">
@@ -63,25 +81,66 @@ const AppContent = () => {
               </Link>
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                   <div id="patient-health-assistant-nav-slot" className="flex items-center min-h-[2.25rem]" aria-live="polite" />
-                  {navItems.map((item) => (
-                    <Link key={item.to} to={item.to} className="text-sm font-semibold text-gray-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-full transition-all duration-200">
-                      {item.label}
-                    </Link>
-                  ))}
-                  <Link to="/medicines" className="text-sm font-semibold text-gray-600 hover:text-blue-700 hover:bg-blue-50 px-3 py-2 rounded-full transition-all duration-200">
-                    Medicines
+                  {navItems.map((item) => {
+                    const isActive = location.pathname === item.to || (item.to !== '/' && location.pathname.startsWith(item.to + '/'));
+                    return (
+                      <Link 
+                        key={item.to} 
+                        to={item.to} 
+                        className={`text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 ${isActive ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'}`}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                  <Link 
+                    to="/medicines" 
+                    className={`text-sm font-semibold px-4 py-2 rounded-full transition-all duration-200 ${location.pathname.startsWith('/medicines') ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700' : 'text-gray-600 hover:text-blue-700 hover:bg-blue-50'}`}
+                  >
+                    {t('navbar.medicines')}
                   </Link>
                   {userInfo?.token ? (
-                    <button onClick={handleLogout} className="ui-btn-secondary inline-flex items-center gap-2 !py-2 !px-3 text-sm">
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+                    <div className="relative" ref={dropdownRef}>
+                        <button 
+                            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                            className="flex items-center gap-2 hover:bg-gray-100 p-1.5 pr-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 group"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md group-hover:scale-105 transition-transform">
+                                {name.charAt(0).toUpperCase()}
+                            </div>
+                            <span className="font-semibold text-gray-800 hidden sm:block">{name}</span>
+                        </button>
+
+                        {/* Dropdown menu */}
+                        {isProfileDropdownOpen && (
+                            <div className="absolute right-0 mt-2 w-56 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 py-2 z-[70] animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="px-4 py-3 border-b border-gray-50/50 mb-1">
+                                    <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
+                                    <p className="text-xs text-gray-500 capitalize mt-0.5">{role}</p>
+                                </div>
+                                <button onClick={() => setIsProfileDropdownOpen(false)} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-colors">
+                                    <User className="w-4 h-4 text-gray-400 group-hover:text-blue-500" /> <span className="font-medium">Profile</span>
+                                </button>
+                                <button onClick={() => setIsProfileDropdownOpen(false)} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-colors">
+                                    <Settings className="w-4 h-4 text-gray-400 group-hover:text-blue-500" /> <span className="font-medium">Settings</span>
+                                </button>
+                                <div className="border-t border-gray-50/50 my-1"></div>
+                                <button 
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors group"
+                                >
+                                    <LogOut className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" /> <span className="font-bold">Logout</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                   ) : (
                     <>
-                      <Link to="/login" className="text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-full transition-all duration-200 cursor-pointer">Login</Link>
-                      <Link to="/register" className="ui-btn-primary !rounded-full !py-2 !px-5 text-sm hover:shadow-lg transition-shadow">Register</Link>
+                      <Link to="/login" className="text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-100 px-3 py-2 rounded-full transition-all duration-200 cursor-pointer">{t('navbar.login')}</Link>
+                      <Link to="/register" className="ui-btn-primary !rounded-full !py-2 !px-5 text-sm hover:shadow-lg transition-shadow">{t('navbar.register')}</Link>
                     </>
                   )}
+                  <LanguageSelector />
               </div>
             </div>
           </div>
@@ -156,11 +215,11 @@ const AppContent = () => {
                 <ul className="space-y-4">
                   <li className="flex items-start group cursor-default">
                     <MapPin className="w-5 h-5 mr-3 text-blue-500 shrink-0 mt-0.5 group-hover:animate-bounce" />
-                    <span className="text-sm text-slate-400 group-hover:text-slate-200 transition-colors">Tower A, Cyber City, DLF Phase 2, Gurugram, Haryana 122002, India</span>
+                    <span className="text-sm text-slate-400 group-hover:text-slate-200 transition-colors">Katraj,Pune, India</span>
                   </li>
                   <li className="flex items-center group cursor-default">
                     <Phone className="w-5 h-5 mr-3 text-blue-500 shrink-0 group-hover:animate-pulse" />
-                    <span className="text-sm text-slate-400 group-hover:text-slate-200 transition-colors">+91 1800 123 4567<br/><span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">Mon-Sat, 9 AM - 8 PM IST</span></span>
+                    <span className="text-sm text-slate-400 group-hover:text-slate-200 transition-colors">+91 1111111111<br/><span className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">Mon-Sat, 9 AM - 8 PM IST</span></span>
                   </li>
                   <li className="flex items-center group cursor-default">
                     <Mail className="w-5 h-5 mr-3 text-blue-500 shrink-0 group-hover:scale-110 transition-transform" />
@@ -183,7 +242,7 @@ const AppContent = () => {
             
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-medium text-slate-500 border-t border-slate-800 pt-6">
               <p className="flex items-center gap-1.5">
-                &copy; {new Date().getFullYear()} <span className="font-bold text-white">HealthCare India</span> Pvt. Ltd. All rights reserved.
+                &copy; {new Date().getFullYear()} <span className="font-bold text-white">HealthCare India</span>
               </p>
               <div className="flex gap-6">
                 <a href="#" className="hover:text-white transition-colors relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:-bottom-1 after:left-0 after:bg-blue-500 after:origin-bottom-right hover:after:scale-x-100 hover:after:origin-bottom-left after:transition-transform after:duration-300">Privacy Policy</a>

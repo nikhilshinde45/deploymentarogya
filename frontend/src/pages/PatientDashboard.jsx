@@ -59,7 +59,7 @@ const getDisplayStatus = (appt) => {
 
 const useCountUp = (end, duration = 1500) => {
     const [count, setCount] = useState(0);
-    
+
     useEffect(() => {
         let startTime = null;
         let animationFrame;
@@ -67,10 +67,10 @@ const useCountUp = (end, duration = 1500) => {
         const animate = (currentTime) => {
             if (!startTime) startTime = currentTime;
             const progress = currentTime - startTime;
-            
+
             const easeOutQuart = 1 - Math.pow(1 - progress / duration, 4);
             const currentCount = Math.floor(end * easeOutQuart);
-            
+
             if (progress < duration) {
                 setCount(Math.min(currentCount, end));
                 animationFrame = requestAnimationFrame(animate);
@@ -370,22 +370,20 @@ const PatientDashboard = () => {
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
                                                 {appt.doctor?.profileImage ? (
-                                                    <img 
-                                                        src={appt.doctor.profileImage} 
-                                                        alt={appt.doctor.name} 
-                                                        className={`w-10 h-10 rounded-full object-cover shrink-0 ring-2 ${
-                                                            appt.status === 'completed' ? 'ring-emerald-100' :
-                                                            effectiveStatus === 'missed' ? 'ring-orange-100' :
-                                                            appt.status === 'cancelled' ? 'ring-red-100' : 'ring-gray-100'
-                                                        }`} 
+                                                    <img
+                                                        src={appt.doctor.profileImage}
+                                                        alt={appt.doctor.name}
+                                                        className={`w-10 h-10 rounded-full object-cover shrink-0 ring-2 ${appt.status === 'completed' ? 'ring-emerald-100' :
+                                                                effectiveStatus === 'missed' ? 'ring-orange-100' :
+                                                                    appt.status === 'cancelled' ? 'ring-red-100' : 'ring-gray-100'
+                                                            }`}
                                                     />
                                                 ) : (
-                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
-                                                        appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                                        effectiveStatus === 'missed' ? 'bg-orange-100 text-orange-700' :
-                                                        appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                        'bg-gray-100 text-gray-700'
-                                                    }`}>
+                                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${appt.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                                            effectiveStatus === 'missed' ? 'bg-orange-100 text-orange-700' :
+                                                                appt.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                                                                    'bg-gray-100 text-gray-700'
+                                                        }`}>
                                                         {(appt.doctor?.name || 'D').charAt(0).toUpperCase()}
                                                     </div>
                                                 )}

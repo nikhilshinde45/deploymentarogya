@@ -45,7 +45,12 @@ const Register = () => {
       pushToast('Registration successful!', 'success');
       navigate('/');
     } catch (error) {
-      pushToast(error.response?.data?.message || 'Registration failed', 'error');
+      if (error.response?.data?.errors) {
+        const errorMessages = error.response.data.errors.map(err => err.message).join(' | ');
+        pushToast(errorMessages, 'error');
+      } else {
+        pushToast(error.response?.data?.message || 'Registration failed', 'error');
+      }
     } finally {
       setLoading(false);
     }

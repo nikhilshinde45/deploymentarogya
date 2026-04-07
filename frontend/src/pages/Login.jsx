@@ -53,7 +53,12 @@ const Login = () => {
       pushToast('Login successful!', 'success');
       navigate(getDashboardPath(userData.role));
     } catch (error) {
-      pushToast(error.response?.data?.message || 'Login failed', 'error');
+      if (error.response?.data?.errors) {
+        const errorMessages = error.response.data.errors.map(err => err.message).join(' | ');
+        pushToast(errorMessages, 'error');
+      } else {
+        pushToast(error.response?.data?.message || 'Login failed', 'error');
+      }
     } finally {
       setLoading(false);
     }

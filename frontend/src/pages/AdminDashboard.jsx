@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 
 /* ── helpers ──────────────────────────────────── */
 
@@ -39,6 +40,7 @@ const emptyPharmForm = {
 /* ── component ────────────────────────────────── */
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { pushToast } = useToast();
   const userInfo = useMemo(() => getUserInfo(), []);
   const token = userInfo?.token || '';
@@ -295,7 +297,14 @@ const AdminDashboard = () => {
 
       closeModal();
     } catch (err) {
-      const msg = err.message || err?.response?.data?.message || 'Save failed.';
+      let msg = 'Save failed.';
+      if (err.response?.data?.errors) {
+        msg = err.response.data.errors.map(e => e.message).join(' | ');
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.message) {
+        msg = err.message;
+      }
       setFormError(msg);
       pushToast(msg, 'error');
     } finally {
@@ -350,9 +359,9 @@ const AdminDashboard = () => {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
-              <Shield className="w-7 h-7 text-blue-600" /> Administrative Dashboard
+              <Shield className="w-7 h-7 text-blue-600" /> {t('admin.title')}
           </h1>
-          <p className="text-gray-500 mt-1">Manage system personnel and platform configurations.</p>
+          <p className="text-gray-500 mt-1">{t('admin.subtitle')}</p>
         </div>
 
         {error && (
@@ -367,13 +376,13 @@ const AdminDashboard = () => {
             onClick={() => setActiveTab('doctors')}
             className={`flex items-center gap-2 px-4 py-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'doctors' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
           >
-            <Stethoscope className="w-4 h-4" /> Manage Doctors
+            <Stethoscope className="w-4 h-4" /> {t('admin.manageDocs')}
           </button>
           <button
             onClick={() => setActiveTab('pharmacists')}
             className={`flex items-center gap-2 px-4 py-3 font-semibold text-sm transition-colors border-b-2 ${activeTab === 'pharmacists' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
           >
-            <Pill className="w-4 h-4" /> Manage Pharmacists
+            <Pill className="w-4 h-4" /> {t('admin.managePharms')}
           </button>
         </div>
 
@@ -385,7 +394,7 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <Stethoscope className="w-6 h-6 text-blue-600" />
-                      Doctor Roster
+                      {t('admin.docRoster')}
                   </h2>
                 </div>
                 <button
@@ -394,7 +403,7 @@ const AdminDashboard = () => {
                   className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold shadow-sm hover:bg-blue-700 transition-colors shrink-0"
                 >
                   <Plus className="w-5 h-5" />
-                  Add Doctor
+                  {t('admin.addDoc')}
                 </button>
               </div>
 
@@ -402,7 +411,7 @@ const AdminDashboard = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, specialization, or ID…"
+                  placeholder={t('admin.searchDocs')}
                   value={docSearch}
                   onChange={(e) => setDocSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-200 outline-none transition-all"
@@ -467,7 +476,7 @@ const AdminDashboard = () => {
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <Pill className="w-6 h-6 text-purple-600" />
-                      Pharmacist Roster
+                      {t('admin.pharmRoster')}
                   </h2>
                 </div>
                 <button
@@ -476,7 +485,7 @@ const AdminDashboard = () => {
                   className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 text-white font-semibold shadow-sm hover:bg-purple-700 transition-colors shrink-0"
                 >
                   <Plus className="w-5 h-5" />
-                  Add Pharmacist
+                  {t('admin.addPharm')}
                 </button>
               </div>
 
@@ -484,7 +493,7 @@ const AdminDashboard = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by name, email, license, phone, or ID…"
+                  placeholder={t('admin.searchPharms')}
                   value={pharmSearch}
                   onChange={(e) => setPharmSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-200 outline-none transition-all"

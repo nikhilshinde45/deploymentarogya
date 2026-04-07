@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Search, Filter, Loader2, RefreshCcw, ChevronDown, Star, Activity, Phone, ArrowRight, CheckCircle2, Award, Mail } from 'lucide-react';
 import DoctorCard from '../components/DoctorCard';
 import heroImg from "../assets/doctor-patient.webp";
+import { useTranslation } from 'react-i18next';
 
 const faqs = [
     { question: "How do I book an online consultation?", answer: "Simply search for a doctor using our specialized filters, check their available slots, and click 'Book Appointment'. You'll get an immediate confirmation." },
@@ -19,6 +20,7 @@ const testimonials = [
 ];
 
 const Home = () => {
+    const { t } = useTranslation();
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -111,14 +113,15 @@ const Home = () => {
                 {/* Header content strictly positioned over background */}
                 <div className="relative z-10 text-center max-w-4xl mx-auto space-y-7 w-full">
                     <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight flex flex-col sm:flex-row items-center justify-center gap-x-3 gap-y-2">
-                        <span>Find Your</span>
+                        <span>{t('home.heroPrefix')}</span>
                         <span
                             key={titleIndex}
                             className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 slide-fade-in inline-block drop-shadow-sm"
-                            style={{ minWidth: '220px', textAlign: 'left' }}
+                            style={{ minWidth: 'min-content', textAlign: 'center', padding: '0 5px' }}
                         >
-                            {titles[titleIndex]}
+                            {t(`home.roles.${titles[titleIndex]}`)}
                         </span>
+                        {t('home.heroSuffix') && <span>{t('home.heroSuffix')}</span>}
                     </h1>
 
                     {/* Marquee Running Text Box */}
@@ -127,10 +130,10 @@ const Home = () => {
                         <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white/80 to-transparent z-10"></div>
                         <div className="whitespace-nowrap animate-marquee flex">
                             <p className="text-blue-800 font-semibold tracking-wide pr-8">
-                                • Search and book appointments with the best verified doctors near you • 24/7 Availability • Secure Consultations •
+                                {t('home.marquee')}
                             </p>
                             <p className="text-blue-800 font-semibold tracking-wide pr-8" aria-hidden="true">
-                                • Search and book appointments with the best verified doctors near you • 24/7 Availability • Secure Consultations •
+                                {t('home.marquee')}
                             </p>
                         </div>
                     </div>
@@ -146,7 +149,7 @@ const Home = () => {
                                 value={searchName}
                                 onChange={(e) => setSearchName(e.target.value)}
                                 className="block w-full pl-10 pr-3 py-4 border-none rounded-xl leading-5 bg-transparent placeholder-gray-400 focus:outline-none focus:ring-0 transition-all sm:text-sm font-medium"
-                                placeholder="Search doctors by name..."
+                                placeholder={t('home.searchPlaceholder')}
                             />
                         </div>
 
@@ -161,7 +164,7 @@ const Home = () => {
                                 onChange={(e) => setSpecialization(e.target.value)}
                                 className="block w-full pl-10 pr-10 py-4 border-none rounded-xl leading-5 bg-transparent focus:outline-none focus:ring-0 transition-all sm:text-sm appearance-none font-medium text-gray-700 cursor-pointer"
                             >
-                                <option value="">All Specializations</option>
+                                <option value="">{t('home.allSpecializations')}</option>
                                 {specializations.filter(Boolean).map(spec => (
                                     <option key={spec} value={spec}>{spec}</option>
                                 ))}
@@ -176,7 +179,7 @@ const Home = () => {
                             className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2 group/btn"
                         >
                             <Search className="w-5 h-5 group-hover/btn:rotate-12 transition-transform" />
-                            Search
+                            {t('home.searchBtn')}
                         </button>
                     </div>
                 </div>
@@ -201,14 +204,14 @@ const Home = () => {
                         <div className="mx-auto w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-400">
                             <Search className="w-10 h-10" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-800">No doctors match your criteria</h3>
-                        <p className="text-gray-500 mt-2">Try adjusting your search filters or specialization</p>
+                        <h3 className="text-xl font-bold text-gray-800">{t('home.noMatchTitle')}</h3>
+                        <p className="text-gray-500 mt-2">{t('home.noMatchSub')}</p>
                         {(searchName || specialization) && (
                             <button
                                 onClick={() => { setSearchName(''); setSpecialization(''); }}
                                 className="mt-6 px-6 py-2 bg-blue-50 text-blue-600 font-medium rounded-full hover:bg-blue-100 transition-colors inline-block"
                             >
-                                Clear all filters
+                                {t('home.clearFilters')}
                             </button>
                         )}
                     </div>
@@ -264,6 +267,7 @@ const Home = () => {
 
             {/* --- NEW SECTION: FAQs --- */}
             <div className="max-w-3xl mx-auto mt-24 mb-24 px-4">
+
                 <div className="text-center mb-10">
                     <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Frequently Asked Questions</h2>
                     <p className="text-gray-500">Everything you need to know about the platform.</p>
@@ -297,6 +301,7 @@ const Home = () => {
                         );
                     })}
                 </div>
+                
             </div>
 
             <style>{`

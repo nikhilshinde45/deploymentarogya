@@ -330,8 +330,8 @@ const DoctorDashboard = () => {
                                         >
                                             <div className="flex items-center gap-4 min-w-0">
                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-sm ${displayStatus === 'completed' ? 'bg-gradient-to-br from-emerald-400 to-emerald-600 text-white' :
-                                                        displayStatus === 'cancelled' ? 'bg-gradient-to-br from-red-400 to-red-600 text-white' :
-                                                            'bg-gradient-to-br from-amber-400 to-amber-600 text-white'
+                                                    displayStatus === 'cancelled' ? 'bg-gradient-to-br from-red-400 to-red-600 text-white' :
+                                                        'bg-gradient-to-br from-amber-400 to-amber-600 text-white'
                                                     }`}>
                                                     {(appt.patient?.name || 'P').charAt(0).toUpperCase()}
                                                 </div>
@@ -375,8 +375,8 @@ const DoctorDashboard = () => {
                                                     <button
                                                         onClick={() => openWriteRecordModal(appt)}
                                                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 hover:shadow-md active:scale-[0.97] ${hasRecord
-                                                                ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
-                                                                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-sm'
+                                                            ? 'bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100'
+                                                            : 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white hover:from-emerald-600 hover:to-emerald-700 shadow-sm'
                                                             }`}
                                                     >
                                                         {hasRecord ? (
@@ -505,8 +505,8 @@ const DoctorDashboard = () => {
                                         type="submit"
                                         disabled={recordSubmitLoading}
                                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-white text-sm font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm hover:shadow-lg ${isEditing
-                                                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700'
-                                                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
+                                            ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700'
+                                            : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
                                             }`}
                                     >
                                         {recordSubmitLoading ? (

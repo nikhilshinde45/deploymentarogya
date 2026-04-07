@@ -1,6 +1,6 @@
 const swaggerUi = require('swagger-ui-express');
 
-const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 3001}`;
+const apiBaseUrl = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
 
 const openApiSpec = {
     openapi: '3.0.3',

@@ -1,0 +1,52 @@
+{
+  "navbar": {
+    "login": "लॉगिन करें",
+    "register": "रजिस्टर करें",
+    "logout": "लॉग आउट",
+    "medicines": "दवाइयाँ"
+  },
+  "navItems": {
+    "home": "होम",
+    "patientDashboard": "मरीज डैशबोर्ड",
+    "medicine": "दवाइयाँ",
+    "doctorDashboard": "डॉक्टर डैशबोर्ड",
+    "manageSlots": "उपलब्धता जोड़ें",
+    "adminDashboard": "एडमिन डैशबोर्ड",
+    "pharmacistDashboard": "फार्मासिस्ट डैशबोर्ड",
+    "navigation": "नेविगेशन"
+  },
+  "admin": {
+    "title": "प्रशासनिक डैशबोर्ड",
+    "subtitle": "सिस्टम कर्मचारियों और प्लेटफ़ॉर्म कॉन्फ़िगरेशन को सुव्यवस्थित करें।",
+    "manageDocs": "डॉक्टर प्रबंधित करें",
+    "managePharms": "फार्मासिस्ट प्रबंधित करें",
+    "docRoster": "डॉक्टर रोस्टर",
+    "addDoc": "डॉक्टर जोड़ें",
+    "pharmRoster": "फार्मासिस्ट रोस्टर",
+    "addPharm": "फार्मासिस्ट जोड़ें",
+    "searchDocs": "नाम, ईमेल, या आईडी से खोजें…",
+    "searchPharms": "नाम, ईमेल, लाइसेंस, या आईडी से खोजें…"
+  },
+  "home": {
+    "heroPrefix": "अपना",
+    "heroSuffix": "खोजें",
+    "roles": {
+      "Specialist": "विशेषज्ञ",
+      "Doctor": "डॉक्टर",
+      "Caregiver": "देखभालकर्ता",
+      "Consultant": "परामर्शदाता"
+    },
+    "findYour": "अपना खोजें",
+    "searchPlaceholder": "नाम से डॉक्टर खोजें...",
+    "allSpecializations": "सभी विशेषताएँ",
+    "searchBtn": "खोजें",
+    "marquee": "• अपने पास के सर्वश्रेष्ठ डॉक्टरों को खोजें और अपॉइंटमेंट बुक करें • 24/7 उपलब्धता • सुरक्षित परामर्श •",
+    "noMatchTitle": "आपकी खोज से कोई डॉक्टर मेल नहीं खाता",
+    "noMatchSub": "अपनी खोज फ़िल्टर या विशेषता को समायोजित करने का प्रयास करें",
+    "clearFilters": "सभी फ़िल्टर साफ़ करें"
+  },
+  "doctorCard": {
+    "yearsExperience": "साल का अनुभव",
+    "viewProfile": "पूरी प्रोफ़ाइल देखें"
+  }
+}

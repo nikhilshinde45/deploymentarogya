@@ -1,0 +1,52 @@
+{
+  "navbar": {
+    "login": "लॉगिन",
+    "register": "नोंदणी करा",
+    "logout": "लॉग आउट",
+    "medicines": "औषधे"
+  },
+  "navItems": {
+    "home": "मुख्यपृष्ठ",
+    "patientDashboard": "रुग्ण डॅशबोर्ड",
+    "medicine": "औषधे",
+    "doctorDashboard": "डॉक्टर डॅशबोर्ड",
+    "manageSlots": "उपलब्धता जोडा",
+    "adminDashboard": "अॅडमिन डॅशबोर्ड",
+    "pharmacistDashboard": "फार्मासिस्ट डॅशबोर्ड",
+    "navigation": "नेव्हिगेशन"
+  },
+  "admin": {
+    "title": "प्रशासकीय डॅशबोर्ड",
+    "subtitle": "सिस्टम कर्मचारी आणि प्लॅटफॉर्म कॉन्फिगरेशन व्यवस्थापित करा.",
+    "manageDocs": "डॉक्टर व्यवस्थापित करा",
+    "managePharms": "फार्मासिस्ट व्यवस्थापित करा",
+    "docRoster": "डॉक्टर रोस्टर",
+    "addDoc": "डॉक्टर जोडा",
+    "pharmRoster": "फार्मासिस्ट रोस्टर",
+    "addPharm": "फार्मासिस्ट जोडा",
+    "searchDocs": "नाव, ईमेल, विशेष किंवा आयडीद्वारे शोधा…",
+    "searchPharms": "नाव, ईमेल, परवाना, किंवा आयडीद्वारे शोधा…"
+  },
+  "home": {
+    "heroPrefix": "तुमचा",
+    "heroSuffix": "शोधा",
+    "roles": {
+      "Specialist": "विशेषज्ञ",
+      "Doctor": "डॉक्टर",
+      "Caregiver": "काळजीवाहक",
+      "Consultant": "सल्लागार"
+    },
+    "findYour": "तुमचा शोधा",
+    "searchPlaceholder": "नावाद्वारे डॉक्टर शोधा...",
+    "allSpecializations": "सर्व विशेषता",
+    "searchBtn": "शोधा",
+    "marquee": "• तुमच्या जवळच्या सर्वोत्तम डॉक्टरांना शोधा आणि भेट बुक करा • २४/७ उपलब्धता • सुरक्षित सल्लामसलत •",
+    "noMatchTitle": "माहितीशी जुळणारे टॉकटर सापडले नाहीत",
+    "noMatchSub": "तुमचे शोध फिल्टर बदलून पहा",
+    "clearFilters": "सर्व फिल्टर साफ करा"
+  },
+  "doctorCard": {
+    "yearsExperience": "वर्षांचा अनुभव",
+    "viewProfile": "संपूर्ण प्रोफाइल पहा"
+  }
+}

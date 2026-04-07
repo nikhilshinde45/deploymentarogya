@@ -1,0 +1,52 @@
+{
+  "navbar": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "medicines": "Medicines"
+  },
+  "navItems": {
+    "home": "Home",
+    "patientDashboard": "Patient Dashboard",
+    "medicine": "Medicine",
+    "doctorDashboard": "Doctor Dashboard",
+    "manageSlots": "Add Availability",
+    "adminDashboard": "Admin Dashboard",
+    "pharmacistDashboard": "Pharmacist Dashboard",
+    "navigation": "Navigation"
+  },
+  "admin": {
+    "title": "Administrative Dashboard",
+    "subtitle": "Manage system personnel and platform configurations.",
+    "manageDocs": "Manage Doctors",
+    "managePharms": "Manage Pharmacists",
+    "docRoster": "Doctor Roster",
+    "addDoc": "Add Doctor",
+    "pharmRoster": "Pharmacist Roster",
+    "addPharm": "Add Pharmacist",
+    "searchDocs": "Search by name, email, specialization, or ID…",
+    "searchPharms": "Search by name, email, license, phone, or ID…"
+  },
+  "home": {
+    "heroPrefix": "Find Your",
+    "heroSuffix": "",
+    "roles": {
+      "Specialist": "Specialist",
+      "Doctor": "Doctor",
+      "Caregiver": "Caregiver",
+      "Consultant": "Consultant"
+    },
+    "findYour": "Find Your",
+    "searchPlaceholder": "Search doctors by name...",
+    "allSpecializations": "All Specializations",
+    "searchBtn": "Search",
+    "marquee": "• Search and book appointments with the best verified doctors near you • 24/7 Availability • Secure Consultations •",
+    "noMatchTitle": "No doctors match your criteria",
+    "noMatchSub": "Try adjusting your search filters or specialization",
+    "clearFilters": "Clear all filters"
+  },
+  "doctorCard": {
+    "yearsExperience": "Years Experience",
+    "viewProfile": "View Full Profile"
+  }
+}

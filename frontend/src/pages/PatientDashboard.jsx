@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
     CalendarDays, Loader2, Pill, ShieldCheck, Clock3, Video,
-    CheckCircle2, FileText, X, AlertCircle, Stethoscope, User
+    CheckCircle2, FileText, X, AlertCircle, Stethoscope, User, VideoOff, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
+import CallConfirmModal from '../components/CallConfirmModal';
 import { useToast } from '../hooks/useToast';
 
 const getUserInfo = () => {
@@ -105,6 +106,11 @@ const PatientDashboard = () => {
     const [recordData, setRecordData] = useState(null);
     const [recordLoading, setRecordLoading] = useState(false);
 
+    // Call confirmation modal state
+    const [callConfirmAppt, setCallConfirmAppt] = useState(null);
+    const [showCallConfirm, setShowCallConfirm] = useState(false);
+    const [callConfirmClosing, setCallConfirmClosing] = useState(false);
+
     const handleViewRecord = async (appt) => {
         setViewRecordId(appt._id);
         setViewRecordAppt(appt);
@@ -156,10 +162,62 @@ const PatientDashboard = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [role]);
 
-    const joinCall = (meetingId) => {
-        if (!meetingId) return;
+    /** Check if an appointment's call window is active, upcoming, or expired */
+    const getCallStatus = (appt) => {
+        const now = new Date();
+        const dateStr = appt.date; // YYYY-MM-DD
+        const startStr = `${dateStr}T${appt.startTime}`;
+        const endTimeVal = appt.slot?.endTime || appt.endTime || appt.startTime;
+        const endStr = `${dateStr}T${endTimeVal}`;
+        const start = new Date(startStr);
+        const end = new Date(endStr);
+
+        if (now < start) return 'before';   // too early
+        if (now > end) return 'after';      // expired
+        return 'active';                    // call window is open
+    };
+
+    /** Format 24h time to 12h AM/PM */
+    const formatTime12h = (t) => {
+        if (!t) return '';
+        const [h, m] = t.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    };
+
+    /** Handle Join Call button click with time validation */
+    const handleJoinCallClick = (appt) => {
+        const status = getCallStatus(appt);
+        if (status === 'before') {
+            pushToast(`Consultation has not started yet. Starts at ${formatTime12h(appt.startTime)}`, 'error', 3000);
+            return;
+        }
+        if (status === 'after') {
+            pushToast('This consultation slot has expired.', 'error', 3000);
+            return;
+        }
+        // Active — show confirmation modal
+        setCallConfirmAppt(appt);
+        setShowCallConfirm(true);
+        setCallConfirmClosing(false);
+    };
+
+    /** User confirmed — navigate to video call */
+    const confirmJoinCall = () => {
+        if (!callConfirmAppt?.meetingId) return;
         pushToast('Joining consultation room', 'info', 1600);
-        navigate(`/video/${encodeURIComponent(meetingId)}`);
+        navigate(`/video/${encodeURIComponent(callConfirmAppt.meetingId)}`);
+        closeCallConfirm();
+    };
+
+    const closeCallConfirm = () => {
+        setCallConfirmClosing(true);
+        setTimeout(() => {
+            setShowCallConfirm(false);
+            setCallConfirmAppt(null);
+            setCallConfirmClosing(false);
+        }, 220);
     };
 
     // Stats
@@ -324,13 +382,42 @@ const PatientDashboard = () => {
                                                     <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}></span>
                                                     {badge.label}
                                                 </span>
-                                                <button
-                                                    onClick={() => joinCall(appt.meetingId)}
-                                                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 hover:shadow-md active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
-                                                >
-                                                    <Video className="w-4 h-4" />
-                                                    Join Call
-                                                </button>
+                                                {(() => {
+                                                    const callStatus = getCallStatus(appt);
+                                                    if (callStatus === 'after') {
+                                                        return (
+                                                            <button
+                                                                disabled
+                                                                className="px-3 py-2 bg-gray-200 text-gray-400 rounded-xl text-sm font-semibold flex items-center gap-1.5 opacity-50 cursor-not-allowed"
+                                                                title="This consultation slot has expired"
+                                                            >
+                                                                <VideoOff className="w-4 h-4" />
+                                                                Expired
+                                                            </button>
+                                                        );
+                                                    }
+                                                    if (callStatus === 'before') {
+                                                        return (
+                                                            <button
+                                                                onClick={() => handleJoinCallClick(appt)}
+                                                                className="px-4 py-2 bg-gray-100 text-gray-500 border border-gray-200 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-all duration-200 flex items-center gap-1.5 cursor-pointer"
+                                                                title={`Call will be available at ${formatTime12h(appt.startTime)}`}
+                                                            >
+                                                                <Clock className="w-4 h-4" />
+                                                                Starts at {formatTime12h(appt.startTime)}
+                                                            </button>
+                                                        );
+                                                    }
+                                                    return (
+                                                        <button
+                                                            onClick={() => handleJoinCallClick(appt)}
+                                                            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 hover:shadow-md active:scale-[0.97] transition-all duration-200 flex items-center gap-1.5"
+                                                        >
+                                                            <Video className="w-4 h-4" />
+                                                            Join Call
+                                                        </button>
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     );
@@ -536,6 +623,16 @@ const PatientDashboard = () => {
                         </div>
                     </div>
                 )}
+
+                {/* ── Call Confirmation Modal ── */}
+                <CallConfirmModal
+                    open={showCallConfirm}
+                    onClose={closeCallConfirm}
+                    onConfirm={confirmJoinCall}
+                    appointment={callConfirmAppt}
+                    role="patient"
+                    closing={callConfirmClosing}
+                />
             </div>
 
             {/* Inline animation keyframe */}

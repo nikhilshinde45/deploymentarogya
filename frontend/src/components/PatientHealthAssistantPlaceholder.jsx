@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { MessageCircle, Sparkles, X, Send, Loader2 } from 'lucide-react';
 
 const NAV_SLOT_ID = 'patient-health-assistant-nav-slot';
-const API_BASE = 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 const readIsPatient = () => {
   try {

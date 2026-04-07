@@ -36,6 +36,43 @@ const buildSlotPopulate = () => ({
 const toISODateString = () => new Date().toISOString().slice(0, 10);
 
 /**
+ * Auto-complete any confirmed appointments whose endTime has already passed.
+ * This runs at the start of dashboard fetches to ensure correct categorisation.
+ */
+const autoCompleteExpired = async () => {
+    const now = new Date();
+    const today = toISODateString();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+    // 1. All confirmed appointments on past dates → completed
+    await Appointment.updateMany(
+        { status: 'confirmed', date: { $lt: today } },
+        { $set: { status: 'completed' } }
+    );
+
+    // 2. Today's confirmed appointments whose slot endTime has passed → completed
+    const todayConfirmed = await Appointment.find({
+        status: 'confirmed',
+        date: today
+    }).populate({ path: 'slot', select: 'endTime' });
+
+    const expiredIds = [];
+    for (const appt of todayConfirmed) {
+        const endTime = appt.slot?.endTime || appt.startTime;
+        if (endTime <= currentTime) {
+            expiredIds.push(appt._id);
+        }
+    }
+
+    if (expiredIds.length > 0) {
+        await Appointment.updateMany(
+            { _id: { $in: expiredIds } },
+            { $set: { status: 'completed' } }
+        );
+    }
+};
+
+/**
  * Add minutes to a HH:mm time string and return the new HH:mm string.
  */
 const addMinutes = (timeStr, minutes) => {
@@ -222,7 +259,7 @@ const getAvailableSlots = async (req, res) => {
 const bookAppointment = async (req, res) => {
     try {
         const patientId = req.user.id;
-        const { slotId } = req.body;
+        const { slotId, mode } = req.body;
 
         if (!slotId || !mongoose.Types.ObjectId.isValid(slotId)) {
             return res.status(400).json({
@@ -230,6 +267,10 @@ const bookAppointment = async (req, res) => {
                 message: 'Valid slotId is required'
             });
         }
+
+        // Validate mode
+        const allowedModes = ['online', 'offline'];
+        const appointmentMode = allowedModes.includes(mode) ? mode : 'online';
 
         // Atomic: only book if status is still 'available'
         const slot = await Slot.findOneAndUpdate(
@@ -266,6 +307,7 @@ const bookAppointment = async (req, res) => {
                 slot: slot._id,
                 date: slot.date,
                 startTime: slot.startTime,
+                mode: appointmentMode,
                 meetingId,
                 status: 'confirmed'
             });
@@ -376,6 +418,9 @@ const getUpcomingAppointments = async (req, res) => {
 // @access  Private/Patient
 const getPatientAppointments = async (req, res) => {
     try {
+        // Auto-complete any expired appointments first
+        await autoCompleteExpired();
+
         const now = new Date();
         const today = toISODateString();
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -449,6 +494,9 @@ const getPatientAppointments = async (req, res) => {
 // @access  Private/Doctor
 const getDoctorAppointments = async (req, res) => {
     try {
+        // Auto-complete any expired appointments first
+        await autoCompleteExpired();
+
         const now = new Date();
         const today = toISODateString();
         const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -541,11 +589,57 @@ const getDoctorAppointments = async (req, res) => {
     }
 };
 
+// @desc    Mark an appointment as completed (e.g. when video call ends)
+// @route   PATCH /api/appointments/:appointmentId/complete
+// @access  Private
+const completeAppointment = async (req, res) => {
+    try {
+        const { appointmentId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(appointmentId)) {
+            return res.status(400).json({ success: false, message: 'Invalid appointmentId' });
+        }
+
+        const appointment = await Appointment.findById(appointmentId);
+        if (!appointment) {
+            return res.status(404).json({ success: false, message: 'Appointment not found' });
+        }
+
+        // Only the doctor or patient involved can complete it
+        const isPatientOwner = appointment.patient.toString() === req.user.id;
+        const isDoctorOwner = req.user.role === 'doctor' && req.user.id === appointment.doctor.toString();
+
+        if (!isPatientOwner && !isDoctorOwner) {
+            return res.status(403).json({ success: false, message: 'Forbidden: Not your appointment' });
+        }
+
+        if (appointment.status === 'completed') {
+            return res.status(200).json({ success: true, message: 'Appointment already completed', data: appointment });
+        }
+
+        if (appointment.status === 'cancelled') {
+            return res.status(400).json({ success: false, message: 'Cannot complete a cancelled appointment' });
+        }
+
+        appointment.status = 'completed';
+        await appointment.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Appointment marked as completed',
+            data: appointment
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+};
+
 module.exports = {
     createSlots,
     getAvailableSlots,
     bookAppointment,
     cancelAppointment,
+    completeAppointment,
     getUpcomingAppointments,
     getPatientAppointments,
     getDoctorAppointments

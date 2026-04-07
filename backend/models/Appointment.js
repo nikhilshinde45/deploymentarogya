@@ -31,6 +31,12 @@ const appointmentSchema = new mongoose.Schema(
             enum: ['confirmed', 'completed', 'cancelled'],
             default: 'confirmed'
         },
+        mode: {
+            type: String,
+            enum: ['online', 'offline'],
+            required: true,
+            default: 'online'
+        },
         meetingId: {
             type: String,
             required: true,

@@ -33,8 +33,25 @@ initSocketHandler(io);
 
 // Middleware
 app.use(express.json());
-app.use(cors());
+// app.use(cors());
+// app.use((req, res, next) => {
+//     const line = `${new Date().toISOString()} ${req.method} ${req.path} body=${JSON.stringify(req.body)}\n`;
+//     fs.appendFileSync('request.log', line);
+//     next();
+// });
+// Middleware (FIXED ORDER + CONFIG)
+app.use(cors({
+    origin: 'https://deploymentarogya.vercel.app',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
+app.options('*', cors()); 
+
+app.use(express.json());
+
 app.use((req, res, next) => {
+    console.log("Incoming:", req.method, req.url); // better for Render logs
     const line = `${new Date().toISOString()} ${req.method} ${req.path} body=${JSON.stringify(req.body)}\n`;
     fs.appendFileSync('request.log', line);
     next();

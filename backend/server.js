@@ -91,5 +91,21 @@ app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
+// Global Error Handler to catch Cloudinary/Multer crash and prevent Server from dying
+app.use((err, req, res, next) => {
+    console.error('Unhandled Express Error:', err.message || err);
+    res.status(500).json({
+        success: false,
+        message: err.message || 'Internal Server Error'
+    });
+});
+
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+});
+
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Server running on port http://localhost:${PORT}`));

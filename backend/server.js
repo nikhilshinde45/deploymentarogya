@@ -40,15 +40,21 @@ app.use(express.json());
 //     next();
 // });
 // Middleware (FIXED ORDER + CONFIG)
+// CORS (MUST BE FIRST)
 app.use(cors({
     origin: 'https://deploymentarogya.vercel.app',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true
 }));
 
-app.options('/*', cors()); 
 
-app.use(express.json());
+
+app.use((req, res, next) => {
+    console.log("Incoming:", req.method, req.url);
+    next();
+});
+
+
 
 app.use((req, res, next) => {
     console.log("Incoming:", req.method, req.url); // better for Render logs

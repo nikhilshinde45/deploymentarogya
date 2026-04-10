@@ -42,9 +42,17 @@ app.use(express.json());
 // Middleware (FIXED ORDER + CONFIG)
 // CORS (MUST BE FIRST)
 app.use(cors({
-    origin: 'https://deploymentarogya.vercel.app',
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin || origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('render.com')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 
